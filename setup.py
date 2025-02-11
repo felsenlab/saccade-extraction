@@ -17,4 +17,9 @@ setup(
     packages=find_packages(exclude=("tests", "docs")),  # Auto-discovers packages in the repo
     install_requires=read_requirements(),  # Read dependencies from requirements.txt
     python_requires=">=3.9",
+    entry_points={
+        "console_scripts": [
+            "saccade_extraction=saccade_extraction.cli:cli",
+        ],
+    },
 )
