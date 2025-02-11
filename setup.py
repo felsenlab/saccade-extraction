@@ -19,7 +19,7 @@ setup(
     python_requires=">=3.9",
     entry_points={
         "console_scripts": [
-            "saccade_extraction=saccade_extraction.cli:cli",
+            "saccade-extraction=saccade_extraction.cli:cli",
         ],
     },
 )
