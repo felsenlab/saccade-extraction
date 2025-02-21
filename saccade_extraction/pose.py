@@ -112,7 +112,8 @@ def computePoseProjections(
 def extractPutativeSaccades(
     configFile,
     dlcFile,
-    ifiFile,
+    ifiFile=None,
+    framerate=None,
     likelihoodThreshold=0.95,
     maximumDataLoss=0.1,
     ):
@@ -132,7 +133,12 @@ def extractPutativeSaccades(
         raise Exception(f'{dataLoss * 100:.2f}% of pose estimates are NaN values (more than threshold of {maximumDataLoss * 100:.0f}%)')
 
     # Compute the empirical framerate
-    ifi = np.loadtxt(ifiFile)[1:] / 1000000000 # Drop the first interval
+    if ifiFile is not None:
+        ifi = np.loadtxt(ifiFile)[1:] / 1000000000 # Drop the first interval
+    elif framerate is not None:
+        ifi = np.full(projections.shape[0] - 1, 1 / framerate)
+    else:
+        raise Exception('You must either specify the timestamps file or the approximate framerate')
     fps = 1 / np.median(ifi)
     tFrames = np.concatenate([[0,], np.cumsum(ifi)])
     if pose.shape[0] != len(tFrames):
