@@ -138,7 +138,7 @@ def extractPutativeSaccades(
     elif framerate is not None:
         ifi = np.full(projections.shape[0] - 1, 1 / framerate)
     else:
-        raise Exception('You must either specify the timestamps file or the approximate framerate')
+        raise Exception('Must provide either the timestamps file or the approximate framerate')
     fps = 1 / np.median(ifi)
     tFrames = np.concatenate([[0,], np.cumsum(ifi)])
     if pose.shape[0] != len(tFrames):
