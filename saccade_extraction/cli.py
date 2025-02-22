@@ -1,5 +1,6 @@
 import click
 from saccade_extraction.project import extractRealSaccades
+from saccade_extraction.dlc import setConfigFile, analyzeVideosQuietly
 
 @click.group()
 def cli():
@@ -20,7 +21,7 @@ def extract(
     Extract real saccades
 
     \b
-    CONFIG: Path to the config file
+    CONFIG: Path to the saccade extraction config file
     DLC: Path to the DeepLabCut pose estimates
     IFI: Path to the file that stores inter-frame intervals
     """
@@ -33,6 +34,29 @@ def extract(
         config,
         fileSets,
         model
+    )
+
+    return
+
+@cli.command()
+@click.argument('config', type=str, required=True)
+@click.argument('video', type=str, required=True)
+def analyze(
+    config,
+    video
+    ):
+    """
+    Analyze video and estimate pose
+
+    \b
+    CONFIG: Path to the DeepLabCut config file
+    VIDEO: Path to the video to analyze
+    """
+
+    analyzeVideosQuietly(
+        config,
+        [video,],
+        save_as_csv=True
     )
 
     return
