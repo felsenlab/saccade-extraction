@@ -4,7 +4,7 @@ DeepLabCut pose estimates.
 
 # Basic usage
 Steps 1-3 describe how to create a project and train the models from scratch. If
-you already have trained models, go ahead and skip to step 4.
+you've already trained your models, go ahead and skip to step 4.
 
 ## 1. Initializing a new project 
 The `initializeProject` function will make a new directory with a standard file structure and generate a config file. You will only need to do this once. The config file specifies the following parameters:
@@ -81,5 +81,5 @@ Alternatively, you can use the command line interface (CLI) to extract saccades.
 It only works for one set of files at a time, but it's easier to use. In the
 terminal execute this command:
 ```Bash
-saccade-extraction extract "<Path to DeepLabCut pose estimate>" "<Path to timestamps file>"
+saccade-extraction extract "<Path to config file>" "<Path to DeepLabCut pose estimate>" "<Path to timestamps file>"
 ```
