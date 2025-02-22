@@ -75,6 +75,7 @@ fileSets = [
      '<Path to first timestamps file>',
     )
 ]
+extractRealSaccades(configFile, fileSets)
 ```
 Alternatively, you can use the command line interface (CLI) to extract saccades.
 It only works for one set of files at a time, but it's easier to use. In the
