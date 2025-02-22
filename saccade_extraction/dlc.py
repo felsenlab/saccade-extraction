@@ -28,6 +28,9 @@ def analyzeVideosQuietly(*args, **kwargs):
     Call DeepLabCut's analyze_videos function but suppress messaging
     """
 
+    if dlc is None:
+        raise Exception('DeepLabCut import failed')
+
     kwargs_ = {}
     kwargs_.update(kwargs)
     with open(os.devnull, 'w') as f, contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
