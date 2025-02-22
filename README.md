@@ -3,8 +3,10 @@ This is a tool for the Felsen lab that extracts saccadic eye movements from
 DeepLabCut pose estimates.
 
 # Basic usage
+Steps 1-3 describe how to create a project and train the models from scratch. If
+you already have trained models, go ahead and skip to step 4.
 
-## Initializing a new project 
+## 1. Initializing a new project 
 The `initializeProject` function will make a new directory with a standard file structure and generate a config file. You will only need to do this once. The config file specifies the following parameters:
 * `velocityThreshold` - Velocity threshold for peak detection (in percentiles)
 * `minimumPeakDistance` - Minimum distance between putative saccades (in seconds) for peak detection
@@ -19,7 +21,7 @@ projectDirectory = '<Path to desired project directory>'
 configFile = initializeProject(projectDirectory)
 ```
 
-## Collecting training data
+## 2. Collecting training data
 The `addNewSessions` function processes the pose estimates and extracts high-velocity eye movements, i.e., putative saccades. You need to pass it a list of tuples in which each tuple contains the file path to the pose estimate output by DeepLabCut and the filepath to the file that stores the inter-frame intervals for that video recording. This only needs to be done if you intend to collect training data from a particular recording.
 ```Python
 from saccade_extraction import addNewSessions
@@ -47,7 +49,7 @@ from saccade_extraction import labelPutativeSaccades
 gui = labelPutativeSaccades(configFile)
 ```
 
-## Training the models
+## 3. Training the models
 The `createTrainingDataset` function will collect all manually collected information and generate a dataset that will be used for training below. You only need to run this funciton if you have collected new training data since you last trained the models.
 ```Python
 from saccade_extraction import createTrainingDataset
@@ -59,7 +61,7 @@ from saccade_extraction import trainModels
 trainModels(configFile, trainingDatasetIndex=-1)
 ```
 
-## Extracting saccades
+## 4. Extracting saccades
 The `extractRealSaccades` function uses the models trained above to extract real saccades from the DeepLabCut pose estimates. It works much like the `addNewSessions` function in that you need to pass it a list of tuples where each tuple contains the path to a pose estimate and the path to the associated inter-frame intervals file. You can process as many recordings at once as you want. This function save an h5 file with the name `real_saccades_data.hdf` to the parent directory that contains the pose estimates. This file has the following datasets:
 * `saccade_waveforms` (N saccades x M features) - The positional saccade waveforms for all real saccades (in pixels)
 * `saccade_labels` (N saccades x 1) - The predicted saccade direction as single character, "N" for nasal saccades, or "T" for temporal saccades
@@ -74,4 +76,9 @@ fileSets = [
     )
 ]
 ```
-
+Alternatively, you can use the command line interface (CLI) to extract saccades.
+It only works for one set of files at a time, but it's easier to use. In the
+terminal execute this command:
+```Bash
+saccade-extraction extract "<Path to DeepLabCut pose estimate>" "<Path to timestamps file>"
+```
