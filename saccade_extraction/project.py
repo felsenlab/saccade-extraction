@@ -71,8 +71,10 @@ def addNewSessions(
 
         # Copy the pose estimates
         targetDirectory = projectDirectory.joinpath('data', dlcFile.stem)
-        if targetDirectory.exists() == False:
-            targetDirectory.mkdir()
+        if targetDirectory.exists():
+            print(f'WARNING: {dlcFile.name} is already a part of the training dataset')
+            continue
+        targetDirectory.mkdir()
 
         #
         try:
