@@ -67,62 +67,73 @@ def addNewSessions(
 
         #
         dlcFile, ifiFile = pl.Path(dlcFile), pl.Path(ifiFile)
-        print(f'Extracting putative saccades from {dlcFile.name}')
+        print(f'INFO: Extracting putative saccades from {dlcFile.name}')
 
         # Copy the pose estimates
         targetDirectory = projectDirectory.joinpath('data', dlcFile.stem)
         if targetDirectory.exists() == False:
             targetDirectory.mkdir()
-        shutil.copy2(dlcFile, targetDirectory)
-        shutil.copy2(ifiFile, targetDirectory)
-
-        # Extract putative saccades
-        putativeSaccadeWaveforms, frameIndices, frameTimestamps = extractPutativeSaccades(
-            configFile,
-            dlcFile,
-            ifiFile,
-            **kwargs
-        )
 
         #
-        nSaccades = putativeSaccadeWaveforms.shape[0]
-        with h5py.File(targetDirectory.joinpath('putative_saccades_data.hdf'), 'w') as stream:
-            stream.create_dataset(
-                'saccade_waveforms',
-                putativeSaccadeWaveforms.shape,
-                data=putativeSaccadeWaveforms,
-                dtype=putativeSaccadeWaveforms.dtype
+        try:
+
+            #
+            shutil.copy2(dlcFile, targetDirectory)
+            shutil.copy2(ifiFile, targetDirectory)
+
+            # Extract putative saccades
+            putativeSaccadeWaveforms, frameIndices, frameTimestamps = extractPutativeSaccades(
+                configFile,
+                dlcFile,
+                ifiFile,
+                **kwargs
             )
-            stream.create_dataset(
-                'frame_indices',
-                frameIndices.shape,
-                data=frameIndices,
-                dtype=frameIndices.dtype
-            )
-            stream.create_dataset(
-                'frame_timestamps',
-                frameTimestamps.shape,
-                data=frameTimestamps,
-                dtype=frameTimestamps.dtype
-            )
-            stream.create_dataset(
-                'saccade_labels',
-                (nSaccades, 1),
-                data=np.full([nSaccades, 1], np.nan),
-                dtype=np.float32
-            )
-            stream.create_dataset(
-                'saccade_onset',
-                (nSaccades, 1),
-                data=np.full([nSaccades, 1], np.nan),
-                dtype=np.float32
-            )
-            stream.create_dataset(
-                'saccade_offset',
-                (nSaccades, 1),
-                data=np.full([nSaccades, 1], np.nan),
-                dtype=np.float32
-            )
+
+            #
+            nSaccades = putativeSaccadeWaveforms.shape[0]
+            with h5py.File(targetDirectory.joinpath('putative_saccades_data.hdf'), 'w') as stream:
+                stream.create_dataset(
+                    'saccade_waveforms',
+                    putativeSaccadeWaveforms.shape,
+                    data=putativeSaccadeWaveforms,
+                    dtype=putativeSaccadeWaveforms.dtype
+                )
+                stream.create_dataset(
+                    'frame_indices',
+                    frameIndices.shape,
+                    data=frameIndices,
+                    dtype=frameIndices.dtype
+                )
+                stream.create_dataset(
+                    'frame_timestamps',
+                    frameTimestamps.shape,
+                    data=frameTimestamps,
+                    dtype=frameTimestamps.dtype
+                )
+                stream.create_dataset(
+                    'saccade_labels',
+                    (nSaccades, 1),
+                    data=np.full([nSaccades, 1], np.nan),
+                    dtype=np.float32
+                )
+                stream.create_dataset(
+                    'saccade_onset',
+                    (nSaccades, 1),
+                    data=np.full([nSaccades, 1], np.nan),
+                    dtype=np.float32
+                )
+                stream.create_dataset(
+                    'saccade_offset',
+                    (nSaccades, 1),
+                    data=np.full([nSaccades, 1], np.nan),
+                    dtype=np.float32
+                )
+
+        # Handle errors
+        except Exception as error:
+            print(f'ERROR: Failed to add data from {dlcFile.name}')
+            print(f'ERROR: {error}')
+            shutil.rmtree(targetDirectory)
 
     return
 
