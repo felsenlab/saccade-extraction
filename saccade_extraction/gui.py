@@ -1,9 +1,11 @@
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QSizePolicy, QFileDialog, QWidget, QButtonGroup
+from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QSizePolicy, QFileDialog, QWidget
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.lines import Line2D
 from matplotlib import ticker
+from matplotlib.pylab import subplots, barh
 import numpy as np
 import pathlib as pl
 import sys
@@ -20,75 +22,128 @@ class UserInterface(object):
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.centralwidget)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.mainLayout = QtWidgets.QHBoxLayout()
+        self.mainLayout.setContentsMargins(-1, -1, 100, -1)
+        self.mainLayout.setObjectName("mainLayout")
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
         self.label = QtWidgets.QLabel(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy)
         self.label.setObjectName("label")
         self.verticalLayout.addWidget(self.label)
         self.radioButton_4 = QtWidgets.QRadioButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.radioButton_4.sizePolicy().hasHeightForWidth())
+        self.radioButton_4.setSizePolicy(sizePolicy)
         self.radioButton_4.setObjectName("radioButton_4")
         self.verticalLayout.addWidget(self.radioButton_4)
         self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.radioButton.sizePolicy().hasHeightForWidth())
+        self.radioButton.setSizePolicy(sizePolicy)
         self.radioButton.setObjectName("radioButton")
         self.verticalLayout.addWidget(self.radioButton)
         self.radioButton_2 = QtWidgets.QRadioButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.radioButton_2.sizePolicy().hasHeightForWidth())
+        self.radioButton_2.setSizePolicy(sizePolicy)
         self.radioButton_2.setObjectName("radioButton_2")
         self.verticalLayout.addWidget(self.radioButton_2)
         self.radioButton_3 = QtWidgets.QRadioButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.radioButton_3.sizePolicy().hasHeightForWidth())
+        self.radioButton_3.setSizePolicy(sizePolicy)
         self.radioButton_3.setObjectName("radioButton_3")
         self.verticalLayout.addWidget(self.radioButton_3)
+        self.label_4 = QtWidgets.QLabel(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label_4.sizePolicy().hasHeightForWidth())
+        self.label_4.setSizePolicy(sizePolicy)
+        self.label_4.setObjectName("label_4")
+        self.verticalLayout.addWidget(self.label_4)
+        self.comboBox = QtWidgets.QComboBox(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.comboBox.sizePolicy().hasHeightForWidth())
+        self.comboBox.setSizePolicy(sizePolicy)
+        self.comboBox.setBaseSize(QtCore.QSize(0, 0))
+        self.comboBox.setEditable(True)
+        self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.verticalLayout.addWidget(self.comboBox)
+        self.label_2 = QtWidgets.QLabel(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
+        self.label_2.setSizePolicy(sizePolicy)
+        self.label_2.setObjectName("label_2")
+        self.verticalLayout.addWidget(self.label_2)
+        self.checkBox_2 = QtWidgets.QCheckBox(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.checkBox_2.sizePolicy().hasHeightForWidth())
+        self.checkBox_2.setSizePolicy(sizePolicy)
+        self.checkBox_2.setObjectName("checkBox_2")
+        self.verticalLayout.addWidget(self.checkBox_2)
+        self.checkBox = QtWidgets.QCheckBox(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.checkBox.sizePolicy().hasHeightForWidth())
+        self.checkBox.setSizePolicy(sizePolicy)
+        self.checkBox.setObjectName("checkBox")
+        self.verticalLayout.addWidget(self.checkBox)
+        self.label_5 = QtWidgets.QLabel(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label_5.sizePolicy().hasHeightForWidth())
+        self.label_5.setSizePolicy(sizePolicy)
+        self.label_5.setObjectName("label_5")
+        self.verticalLayout.addWidget(self.label_5)
+        self.matplotlibWidget_2 = QtWidgets.QWidget(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.matplotlibWidget_2.sizePolicy().hasHeightForWidth())
+        self.matplotlibWidget_2.setSizePolicy(sizePolicy)
+        self.matplotlibWidget_2.setObjectName("matplotlibWidget_2")
+        self.verticalLayout.addWidget(self.matplotlibWidget_2)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
-        self.horizontalLayout_2.addLayout(self.verticalLayout)
+        self.mainLayout.addLayout(self.verticalLayout)
         self.verticalLayout_4 = QtWidgets.QVBoxLayout()
         self.verticalLayout_4.setObjectName("verticalLayout_4")
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.label_7 = QtWidgets.QLabel(self.centralwidget)
-        self.label_7.setObjectName("label_7")
-        self.verticalLayout_2.addWidget(self.label_7)
         self.matplotlibWidget_1 = QtWidgets.QWidget(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.matplotlibWidget_1.sizePolicy().hasHeightForWidth())
         self.matplotlibWidget_1.setSizePolicy(sizePolicy)
-        self.matplotlibWidget_1.setAutoFillBackground(False)
         self.matplotlibWidget_1.setObjectName("matplotlibWidget_1")
-        self.verticalLayout_2.addWidget(self.matplotlibWidget_1)
-        self.matplotlibWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.matplotlibWidget_2.sizePolicy().hasHeightForWidth())
-        self.matplotlibWidget_2.setSizePolicy(sizePolicy)
-        self.matplotlibWidget_2.setObjectName("matplotlibWidget_2")
-        self.verticalLayout_2.addWidget(self.matplotlibWidget_2)
-        self.horizontalLayout_3.addLayout(self.verticalLayout_2)
-        self.verticalLayout_3 = QtWidgets.QVBoxLayout()
-        self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.label_8 = QtWidgets.QLabel(self.centralwidget)
-        self.label_8.setObjectName("label_8")
-        self.verticalLayout_3.addWidget(self.label_8)
-        self.matplotlibWidget_3 = QtWidgets.QWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.matplotlibWidget_3.sizePolicy().hasHeightForWidth())
-        self.matplotlibWidget_3.setSizePolicy(sizePolicy)
-        self.matplotlibWidget_3.setObjectName("matplotlibWidget_3")
-        self.verticalLayout_3.addWidget(self.matplotlibWidget_3)
-        self.matplotlibWidget_4 = QtWidgets.QWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.matplotlibWidget_4.sizePolicy().hasHeightForWidth())
-        self.matplotlibWidget_4.setSizePolicy(sizePolicy)
-        self.matplotlibWidget_4.setObjectName("matplotlibWidget_4")
-        self.verticalLayout_3.addWidget(self.matplotlibWidget_4)
-        self.horizontalLayout_3.addLayout(self.verticalLayout_3)
+        self.horizontalLayout_3.addWidget(self.matplotlibWidget_1)
+        self.horizontalLayout_3.setStretch(0, 1)
         self.verticalLayout_4.addLayout(self.horizontalLayout_3)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
@@ -110,27 +165,12 @@ class UserInterface(object):
         self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton_5.setObjectName("pushButton_5")
         self.horizontalLayout.addWidget(self.pushButton_5)
-        self.label_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_2.setObjectName("label_2")
-        self.horizontalLayout.addWidget(self.label_2)
-        self.checkBox_2 = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox_2.setObjectName("checkBox_2")
-        self.horizontalLayout.addWidget(self.checkBox_2)
-        self.checkBox = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox.setObjectName("checkBox")
-        self.horizontalLayout.addWidget(self.checkBox)
-        self.label_4 = QtWidgets.QLabel(self.centralwidget)
-        self.label_4.setObjectName("label_4")
-        self.horizontalLayout.addWidget(self.label_4)
-        self.horizontalSlider_3 = QtWidgets.QSlider(self.centralwidget)
-        self.horizontalSlider_3.setOrientation(QtCore.Qt.Horizontal)
-        self.horizontalSlider_3.setTickPosition(QtWidgets.QSlider.TicksBothSides)
-        self.horizontalSlider_3.setObjectName("horizontalSlider_3")
-        self.horizontalLayout.addWidget(self.horizontalSlider_3)
         spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem1)
         self.verticalLayout_4.addLayout(self.horizontalLayout)
-        self.horizontalLayout_2.addLayout(self.verticalLayout_4)
+        self.mainLayout.addLayout(self.verticalLayout_4)
+        self.mainLayout.setStretch(1, 1)
+        self.horizontalLayout_2.addLayout(self.mainLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1200, 20))
@@ -150,57 +190,45 @@ class UserInterface(object):
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
+        self.comboBox.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Saccade Labeling GUI"))
-        self.label.setText(_translate("MainWindow", "Labels"))
+        self.label.setText(_translate("MainWindow", "Labels:"))
         self.radioButton_4.setText(_translate("MainWindow", "Not labeled"))
         self.radioButton.setText(_translate("MainWindow", "Not a saccade"))
         self.radioButton_2.setText(_translate("MainWindow", "Nasal saccade"))
         self.radioButton_3.setText(_translate("MainWindow", "Temporal saccade"))
-        self.label_7.setText(_translate("MainWindow", "Nasal-temporal component"))
-        self.label_8.setText(_translate("MainWindow", "Upper-lower component"))
+        self.label_4.setText(_translate("MainWindow", "Sample order:"))
+        self.comboBox.setCurrentText(_translate("MainWindow", "Random"))
+        self.comboBox.setItemText(0, _translate("MainWindow", "Random"))
+        self.comboBox.setItemText(1, _translate("MainWindow", "Chronological"))
+        self.comboBox.setItemText(2, _translate("MainWindow", "Labeled"))
+        self.label_2.setText(_translate("MainWindow", "Line selector:"))
+        self.checkBox_2.setText(_translate("MainWindow", "Start"))
+        self.checkBox.setText(_translate("MainWindow", "stop"))
+        self.label_5.setText(_translate("MainWindow", "Metrics:"))
         self.pushButton_3.setText(_translate("MainWindow", "Open"))
         self.pushButton_6.setText(_translate("MainWindow", "Close"))
         self.pushButton_4.setText(_translate("MainWindow", "Save"))
         self.pushButton.setText(_translate("MainWindow", "Previous"))
         self.pushButton_2.setText(_translate("MainWindow", "Next"))
-        self.pushButton_5.setText(_translate("MainWindow", "Reset lines"))
-        self.label_2.setText(_translate("MainWindow", "Line selector:"))
-        self.checkBox_2.setText(_translate("MainWindow", "Start"))
-        self.checkBox.setText(_translate("MainWindow", "stop"))
-        self.label_4.setText(_translate("MainWindow", "y-range:"))
+        self.pushButton_5.setText(_translate("MainWindow", "Reset"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.actionLoad.setText(_translate("MainWindow", "Open"))
         self.actionSave.setText(_translate("MainWindow", "Save"))
 
-class MatplotlibCanvasWidget(FigureCanvas):
-    """ Matplotlib Figure as a QWidget """
-    def __init__(self, parent=None, gui=None):
-        self.gui = gui
-        self.fig = Figure()
-        self.ax = self.fig.add_subplot()
-        self.start = Line2D([], [], color='k', alpha=0.3)
-        self.stop = Line2D([], [], color='k', alpha=0.3)
-        self.wf = Line2D([], [], color='k')
-        self.vline = Line2D([], [], color='k', alpha=0.3)
-        self.hline = Line2D([], [], color='k', alpha=0.3)
-        self.lines = (
-            self.start,
-            self.stop,
-            self.wf,
-            self.vline,
-            self.hline
-        )
-        for ln in self.lines:
-            self.ax.add_line(ln)
-            ln.set_visible(False)
-        # self.ax.tick_params(axis='y', labelrotation=90)
-        self.ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
-        self.fig.tight_layout()
+class FigureCanvasExtended(FigureCanvas):
+    """
+    """
+
+    def __init__(self, parent=None, gui=None,  nrows=1, ncols=1):
+        self.fig, self.axes = subplots(nrows, ncols, sharex=True, sharey=True)
+        self.parent = parent
         super().__init__(self.fig)
+        self.gui = gui
         self.mpl_connect('button_press_event', self.onMouseClick)
         return
     
@@ -208,7 +236,97 @@ class MatplotlibCanvasWidget(FigureCanvas):
         """
         """
 
+        if self.parent and self.parent.toolbar.mode != '':
+            return
         self.gui.handleMouseClickForMatplotlib(event)
+
+        return
+    
+class SaccadeLabelingWidget(QWidget):
+    """
+    """
+
+    def __init__(self, parent=None, gui=None, nrows=1, ncols=1, tb=True):
+        """
+        """
+
+        super().__init__(parent)
+        self.canvas = FigureCanvasExtended(gui=gui, parent=self, nrows=nrows, ncols=ncols)
+
+        # Add subplots
+        self.axes = self.canvas.axes
+        #
+        self.axes[0, 0].set_title('Nasal-temporal component', fontsize=10)
+        self.axes[0, 1].set_title('Upper-lower component', fontsize=10)
+        self.axes[0, 0].set_ylabel('Nasal <- Position (px) -> Temp.')
+        self.axes[1, 0].set_ylabel('Velocity (px/s)')
+        self.axes[1, 0].set_xlabel('Time (s)')
+        self.axes[1, 1].set_xlabel('Time (s)')
+
+        # Add toolbar
+        if tb:
+            self.toolbar = NavigationToolbar(self.canvas, self)
+        else:
+            self.toolbar = None
+
+        # Set layout
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)  # Add toolbar on top
+        layout.addWidget(self.canvas)   # Add figure below it
+        self.setLayout(layout)
+
+        # Add lines
+        self.lines = {
+            'start': np.full([2, 2], object),
+            'stop': np.full([2, 2], object),
+            'vline': np.full([2, 2], object),
+            'hline': np.full([2, 2], object),
+            'wave': np.full([2, 2], object),
+        }
+        for (i, j), ax in np.ndenumerate(self.axes):
+            for key in self.lines.keys():
+                line = Line2D([], [], color='k', alpha=0.3)
+                ax.add_line(line)
+                line.set_visible(False)
+                self.lines[key][i, j] = line
+
+        return
+
+class LabelingMetricsWidget(QWidget):
+    """
+    """
+
+    def __init__(self, parent=None):
+        """
+        """
+
+        super().__init__(parent)
+        self.fig = Figure()
+        self.canvas = FigureCanvas(self.fig)
+        self.axes = [self.canvas.figure.add_subplot(111)]
+        self.axes[0].set_xlabel('Counts')
+        self.axes[0].set_ylabel('Sample label')
+        self.bars = self.axes[0].barh(
+            ['X', 'N', 'T'],
+            np.zeros(3),
+            height=0.4,
+            color=['0.5', 'r', 'b']
+        )
+        self.labels = list()
+        for i in range(3):
+            label = self.axes[0].text(
+                0, 0,
+                '',
+                ha='center',
+                va='center',
+                fontsize=10,
+                color='w'
+            )
+            self.labels.append(label)
+            label.set_visible(False)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
 
         return
 
@@ -220,7 +338,6 @@ class SaccadeLabelingGUI(QMainWindow):
         self,
         configFile,
         seek=None,
-        yscale=1.0
         ):
         """
         """
@@ -230,45 +347,30 @@ class SaccadeLabelingGUI(QMainWindow):
         self.ui = UserInterface()
         self.ui.setupUi(self)
 
+        # Subplots widget
+        self.labelingWidget = SaccadeLabelingWidget(gui=self, nrows=2, ncols=2)
+        layout = self.ui.matplotlibWidget_1.layout()
+        if layout is None:
+            layout = QVBoxLayout(self.ui.matplotlibWidget_1)  # Assign layout to correct parent
+            self.ui.matplotlibWidget_1.setLayout(layout)  # Ensure the widget gets a layout
+        layout.addWidget(self.labelingWidget)
+        self.labelingWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.labelingWidget.canvas.fig.set_tight_layout(True)
+        self.labelingWidget.canvas.draw()
+
+        # Metrics widget
+        self.metricsWidget = LabelingMetricsWidget()
+        self.metricsWidget.setMaximumWidth(200)
+        self.metricsWidget.setMaximumHeight(300)
+        layout = self.ui.matplotlibWidget_2.layout()
+        if layout is None:
+            layout = QVBoxLayout(self.ui.matplotlibWidget_2)
+            self.ui.matplotlibWidget_2.setLayout(layout)
+        layout.addWidget(self.metricsWidget)
+        self.metricsWidget.canvas.figure.set_tight_layout(True)
+        self.metricsWidget.canvas.draw()
+
         #
-        self.axes = np.array([
-            [MatplotlibCanvasWidget(gui=self), MatplotlibCanvasWidget(gui=self)],
-            [MatplotlibCanvasWidget(gui=self), MatplotlibCanvasWidget(gui=self)],
-        ])
-        for widget in self.axes.ravel():
-            widget.ax.set_xlabel('Time (s)')
-        self.axes[0, 0].ax.set_ylabel('Nasal <- Pos (px) -> Temp')
-        self.axes[0, 1].ax.set_ylabel('Upper <- Pos (px) -> Lower')
-        for widget in self.axes[1, :]:
-            widget.ax.set_ylabel(f'Velocity ($\Delta px$)')
-        indices = np.array([
-            [0, 0],
-            [1, 0],
-            [0, 1],
-            [1, 1]
-        ])
-        widgets = (
-            self.ui.matplotlibWidget_1,
-            self.ui.matplotlibWidget_2,
-            self.ui.matplotlibWidget_3,
-            self.ui.matplotlibWidget_4
-        )
-
-        for (i, j), widget in zip(indices, widgets):
-            if widget.layout() is None:  # Ensure it has a layout
-                layout = QVBoxLayout(widget)
-                widget.setLayout(layout)
-            else:
-                layout = widget.layout()
-            layout.addWidget(self.axes[i, j])
-
-            # Set expanding size policy
-            self.axes[i, j].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-            # Adjust layout inside figure
-            self.axes[i, j].fig.set_tight_layout(True)
-            self.axes[i, j].draw()
-
         self.update()
         self.repaint()
 
@@ -285,10 +387,10 @@ class SaccadeLabelingGUI(QMainWindow):
             self.sampleIndex = seek - 1
         with open(configFile, 'r') as stream:
             self.configData = yaml.safe_load(stream)
-        self.yscale = yscale
         self.tStart = self.configData['responseWindow'][0]
         self.tStop = self.configData['responseWindow'][1]
         self.store = None
+        self._i = 0
 
         #
         self.ui.pushButton_3.clicked.connect(self.onOpenButtonClicked)
@@ -297,10 +399,6 @@ class SaccadeLabelingGUI(QMainWindow):
         self.ui.pushButton_2.setToolTip('Push to load the next saccade')
         self.ui.pushButton.clicked.connect(self.onPreviousButtonClicked)
         self.ui.pushButton.setToolTip('Push to load the previous saccade')
-        self.ui.horizontalSlider_3.setMinimum(1)
-        self.ui.horizontalSlider_3.setMaximum(100)
-        self.ui.horizontalSlider_3.setValue(int(round(self.yscale * 100)))
-        self.ui.horizontalSlider_3.valueChanged.connect(self.onRangeSliderMovement)
         self.ui.radioButton.toggled.connect(self.onRadioButtonClicked)
         self.ui.radioButton_2.toggled.connect(self.onRadioButtonClicked)
         self.ui.radioButton_3.toggled.connect(self.onRadioButtonClicked)
@@ -318,15 +416,15 @@ class SaccadeLabelingGUI(QMainWindow):
         self.ui.pushButton_5.clicked.connect(self.onResetLinesButtonClicked)
         self.ui.pushButton_5.setToolTip('Push to reset the saccade onset and offset lines')
         self.ui.pushButton_6.clicked.connect(self.onCloseButtonClicked)
-        for widget in self.axes.flatten():
-            widget.setToolTip('Click anywhere on the figure to move the saccade onset or offset lines.\nYou must have at least one line selector enabled.')
-
+        self.ui.comboBox.setEditable(False)
+        self.ui.comboBox.activated.connect(self.onComboBoxActivated)
+        
         #
         self.initializePlots()
 
         # Disable all widgets except the Open button
         for widget in self.ui.centralwidget.findChildren(QWidget):
-            if widget == self.ui.pushButton_3:
+            if widget in [self.ui.pushButton_3, self.ui.pushButton_6]:
                 continue
             else:
                 widget.setEnabled(False)
@@ -366,6 +464,8 @@ class SaccadeLabelingGUI(QMainWindow):
 
         # Load labeled data
         nSamples = self.saccadeWaveforms.shape[0]
+        self.sampleOrder = np.arange(nSamples)
+        np.random.shuffle(self.sampleOrder)
         y = np.full([nSamples, 3], np.nan)
         with h5py.File(self.store, 'r') as stream:
             y[:, 0] = np.array(stream['saccade_labels']).ravel()
@@ -375,25 +475,15 @@ class SaccadeLabelingGUI(QMainWindow):
 
         # Set the sample index
         if self.sampleIndex is None:
-            self.sampleIndex = 0
+            self.sampleIndex = self.sampleOrder[0]
 
         # Determine the x and y limits for the axes
-        y1 = np.abs([
-            self.saccadeWaveforms.min(),
-            self.saccadeWaveforms.max()
-        ]).max() * 1.1
-        y2 = np.abs([
-            np.diff(self.saccadeWaveforms, axis=-1).min(),
-            np.diff(self.saccadeWaveforms, axis=-1).max()
-        ]).max() * 1.1
-        self.ylims = np.array([
-            [y1, y1],
-            [y2, y2]
-        ])
+        ymax = np.max(np.abs(self.saccadeWaveforms))
+        self.ylim = np.array([-ymax, ymax])
 
         # Update widgets
-        self.onRangeSliderMovement(self.yscale * 100)
         self.updatePlots()
+        self.updateMetricsWidget()
         self.updateRadioButtons()
         self.statusBar().showMessage(
             f'Showing sample {self.sampleIndex + 1} out of {self.saccadeWaveforms.shape[0]} from {self.targetDirectory.name}'
@@ -407,6 +497,9 @@ class SaccadeLabelingGUI(QMainWindow):
         """
 
         #
+        if self.store is None:
+            return
+
         keys = (
             'saccade_labels',
             'saccade_onset',
@@ -431,10 +524,14 @@ class SaccadeLabelingGUI(QMainWindow):
         """
 
         #
-        self.sampleIndex = np.take(np.arange(len(self.y)), self.sampleIndex - 1, mode='wrap')
+        self._i = np.take(np.arange(self.y.shape[0]), self._i - 1, mode='wrap')
+        self.sampleIndex = self.sampleOrder[self._i]
+        # self.sampleIndex = np.take(self.sampleIndices, self.sampleIndex - 1, mode='wrap')
         self.statusBar().showMessage(f'Showing sample {self.sampleIndex + 1} out of {self.saccadeWaveforms.shape[0]} for {self.targetDirectory.name}')
-        self.updatePlots()
+        self.updatePlots(resetLimits=True)
         self.updateRadioButtons()
+        for cb in self.checkBoxes:
+            cb.setChecked(False)
 
         return
     
@@ -443,10 +540,14 @@ class SaccadeLabelingGUI(QMainWindow):
         """
 
         #
-        self.sampleIndex = np.take(np.arange(len(self.y)), self.sampleIndex + 1, mode='wrap')
+        self._i = np.take(np.arange(self.y.shape[0]), self._i + 1, mode='wrap')
+        self.sampleIndex = self.sampleOrder[self._i]
+        # self.sampleIndex = np.take(self.sampleIndices, self.sampleIndex + 1, mode='wrap')
         self.statusBar().showMessage(f'Showing sample {self.sampleIndex + 1} out of {self.saccadeWaveforms.shape[0]} for {self.targetDirectory.name}')
-        self.updatePlots()
+        self.updatePlots(resetLimits=True)
         self.updateRadioButtons()
+        for cb in self.checkBoxes:
+            cb.setChecked(False)
 
         return
     
@@ -455,7 +556,7 @@ class SaccadeLabelingGUI(QMainWindow):
         """
 
         self.y[self.sampleIndex, 1:] = (np.nan, np.nan)
-        self.updatePlots()
+        self.updatePlots(resetLimits=True)
 
         return
     
@@ -465,17 +566,6 @@ class SaccadeLabelingGUI(QMainWindow):
 
         self.onSaveButtonClicked() # Save progress
         self.close()
-
-        return
-    
-    def onRangeSliderMovement(self, value):
-        """
-        """
-
-        normalized = value / 100
-        scaled = 0.1 * (100 / 0.1) ** normalized
-        self.yscale = scaled / 100
-        self.updatePlots()
 
         return
     
@@ -508,6 +598,7 @@ class SaccadeLabelingGUI(QMainWindow):
 
         #
         self.y[self.sampleIndex, 0] = label
+        self.updateMetricsWidget()
 
         return
     
@@ -525,6 +616,36 @@ class SaccadeLabelingGUI(QMainWindow):
             if cb != sender:
                 if cb.isChecked():
                     cb.setChecked(False)
+
+        return
+
+    def onComboBoxActivated(self, index):
+        """
+        """
+
+        text = self.ui.comboBox.currentText()
+        nSamples = self.saccadeWaveforms.shape[0]
+        if text == 'Random':
+            sampleOrder = np.arange(nSamples)
+            np.random.shuffle(sampleOrder)
+        elif text == 'Chronological':
+            sampleOrder = np.arange(nSamples)
+        elif text == 'Labeled':
+            sampleOrder = [i for i in np.where(np.logical_not(np.isnan(self.y).all(1)))[0]]
+            for sampleIndex in np.arange(nSamples):
+                if sampleIndex in sampleOrder:
+                    continue
+                sampleOrder.append(sampleIndex)
+            sampleOrder= np.array(sampleOrder)
+
+        self.sampleOrder = sampleOrder
+        self._i = 0
+        self.sampleIndex = self.sampleOrder[0]
+        self.updatePlots()
+        self.updateRadioButtons()
+        self.statusBar().showMessage(
+            f'Showing sample {self.sampleIndex + 1} out of {self.saccadeWaveforms.shape[0]} from {self.targetDirectory.name}'
+        )
 
         return
     
@@ -569,7 +690,7 @@ class SaccadeLabelingGUI(QMainWindow):
             if x > self.configData['responseWindow'][1]:
                 x = np.nan
             self.y[self.sampleIndex, 2] = x
-        self.updatePlots()
+        self.updatePlots(resetLimits=False)
 
         return
     
@@ -625,18 +746,14 @@ class SaccadeLabelingGUI(QMainWindow):
             self.configData['responseWindow'][0] * 1.1,
             self.configData['responseWindow'][1] * 1.1
         )
-        for widget in self.axes.ravel():
-            widget.ax.set_xticks(self.xticks)
-            widget.ax.set_xticklabels(self.xticks)
-            widget.ax.set_xlim(self.xlim)
-        
-        # Remove the yticklabels
-        # for widget in self.axes.ravel():
-        #     widget.ax.set_yticklabels([])
+        for ax in self.labelingWidget.axes.ravel():
+            ax.set_xticks(self.xticks)
+            ax.set_xticklabels(self.xticks)
+            ax.set_xlim(self.xlim)
 
         return
     
-    def updatePlots(self):
+    def updatePlots(self, resetLimits=True):
         """
         Update the matplotlib figures
         """
@@ -653,50 +770,40 @@ class SaccadeLabelingGUI(QMainWindow):
             t1
         )
 
+        # Update top-left plot
+        ax = self.labelingWidget.axes[0, 0]
+
         # Draw position waveforms
-        self.axes[0, 0].wf.set_xdata(t1)
-        self.axes[0, 0].wf.set_ydata(self.saccadeWaveforms[self.sampleIndex, 0, :])
-        if self.axes[0, 0].wf.get_visible() == False:
-            self.axes[0, 0].wf.set_visible(True)
-        self.axes[0, 1].wf.set_xdata(t1)
-        self.axes[0, 1].wf.set_ydata(self.saccadeWaveforms[self.sampleIndex, 1, :])
-        if self.axes[0, 1].wf.get_visible() == False:
-            self.axes[0, 1].wf.set_visible(True)    
+        for j in (0, 1):
+            self.labelingWidget.lines['wave'][0, j].set_xdata(t1)
+            self.labelingWidget.lines['wave'][0, j].set_ydata(self.saccadeWaveforms[self.sampleIndex, j, :])
+            self.labelingWidget.lines['wave'][0, j].set_alpha(1.0)
+            if self.labelingWidget.lines['wave'][0, j].get_visible() == False:
+                self.labelingWidget.lines['wave'][0, j].set_visible(True)
 
         # Draw velocity waveforms
-        self.axes[1, 0].wf.set_xdata(t2)
-        self.axes[1, 0].wf.set_ydata(np.diff(self.saccadeWaveforms[self.sampleIndex, 0, :]))
-        if self.axes[1, 0].wf.get_visible() == False:
-            self.axes[1, 0].wf.set_visible(True)    
-        self.axes[1, 1].wf.set_xdata(t2)
-        self.axes[1, 1].wf.set_ydata(np.diff(self.saccadeWaveforms[self.sampleIndex, 1, :]))
-        if self.axes[1, 1].wf.get_visible() == False:
-            self.axes[1, 1].wf.set_visible(True)
+        for j in (0, 1):
+            self.labelingWidget.lines['wave'][1, j].set_xdata(t2)
+            self.labelingWidget.lines['wave'][1, j].set_ydata(np.diff(self.saccadeWaveforms[self.sampleIndex, j, :]))
+            self.labelingWidget.lines['wave'][1, j].set_alpha(1.0)
+            if self.labelingWidget.lines['wave'][1, j].get_visible() == False:
+                self.labelingWidget.lines['wave'][1, j].set_visible(True)    
 
         # Draw horizontal and vertical lines
-        for widget in self.axes[0, :]:
-            widget.hline.set_xdata(self.xlim)
-            widget.hline.set_ydata([0, 0])
-            widget.vline.set_xdata([0, 0])
-            widget.vline.set_ydata([
-                self.ylims[0, 0] * self.yscale * -1,
-                self.ylims[0, 0] * self.yscale
-            ])
-            widget.vline.set_visible(True)
-            widget.hline.set_visible(True)
-        for widget in self.axes[1, :]:
-            widget.hline.set_xdata(self.xlim)
-            widget.hline.set_ydata([0, 0])
-            widget.vline.set_xdata([0, 0])
-            widget.vline.set_ydata([
-                self.ylims[1, 0] * self.yscale * -1,
-                self.ylims[1, 0] * self.yscale
-            ])
-            widget.vline.set_visible(True)
-            widget.hline.set_visible(True)
+        for (i, j), ax in np.ndenumerate(self.labelingWidget.axes):
+            ln = self.labelingWidget.lines['hline'][i, j]
+            ln.set_xdata(self.xlim)
+            ln.set_ydata([0, 0])
+            ln.set_visible(True)
+            ln.set_linestyle(':')
+            ln = self.labelingWidget.lines['vline'][i, j]
+            ln.set_xdata([0, 0])
+            ln.set_ydata(self.ylim)
+            ln.set_visible(True)
+            ln.set_linestyle(':')
 
         # Draw the start and stop lines
-        for (i, j), widget in np.ndenumerate(self.axes):
+        for (i, j), ax in np.ndenumerate(self.labelingWidget.axes):
 
             #
             tStart = self.y[self.sampleIndex, 1]
@@ -717,30 +824,67 @@ class SaccadeLabelingGUI(QMainWindow):
             else:
                 cStop = 'r'
                 aStop = 0.7
-            ydata = (-1 * self.ylims[i, j], self.ylims[i, j])
+
+            # Set x and y data for the start line
+            ydata = self.ylim
             xdata = (tStart, tStart)
             if np.isnan(xdata).all():
                 xdata = (self.configData['responseWindow'][0], self.configData['responseWindow'][0])
-            widget.start.set_xdata(xdata)
-            widget.start.set_ydata(ydata)
+            self.labelingWidget.lines['start'][i, j].set_xdata(xdata)
+            self.labelingWidget.lines['start'][i, j].set_ydata(ydata)
+
+            # Set x and y data for the stop line
             xdata = (tStop, tStop)
             if np.isnan(xdata).all():
                 xdata = (self.configData['responseWindow'][1], self.configData['responseWindow'][1])
-            widget.stop.set_xdata(xdata)
-            widget.stop.set_ydata(ydata)
-            for ln, a, c in zip([widget.start, widget.stop], [aStart, aStop], [cStart, cStop]):
+            self.labelingWidget.lines['stop'][i, j].set_xdata(xdata)
+            self.labelingWidget.lines['stop'][i, j].set_ydata(ydata)
+
+            # Set color and alpha for both lines
+            lines = [
+                self.labelingWidget.lines['start'][i, j],
+                self.labelingWidget.lines['stop'][i, j]
+            ]
+            alphas = [aStart, aStop]
+            colors = [cStart, cStop]
+            for ln, a, c in zip(lines, alphas, colors):
                 ln.set_visible(True)
                 ln.set_color(c)
                 ln.set_alpha(a)
 
         # Set the x and y limits
-        for widget, ylim in zip(self.axes.flatten(), self.ylims.flatten()):
-            widget.ax.set_ylim([-1 * ylim * self.yscale, ylim * self.yscale])
-            widget.ax.set_xlim(self.xlim)
+        if resetLimits:
+            for ax in self.labelingWidget.axes.ravel():
+                ax.set_ylim(self.ylim)
+                ax.set_xlim(self.xlim)
 
-        # Render subplots
-        for widget in self.axes.ravel():
-            widget.draw()
+        # Draw
+        self.labelingWidget.canvas.draw()
+
+        return
+
+    def updateMetricsWidget(self):
+        """
+        """
+
+        # Update the metrics widget
+        counts = np.array([
+            np.sum(self.y[:, 0] ==  0),
+            np.sum(self.y[:, 0] == +1),
+            np.sum(self.y[:, 0] == -1)
+        ])
+        for i in range(3):
+            bar = self.metricsWidget.bars[i]
+            bar.set_width(counts[i])
+            label = self.metricsWidget.labels[i]
+            label.set_position([
+                bar.get_width() / 2,
+                i
+            ])
+            label.set_text(f'{counts[i]:.0f}')
+            label.set_visible(True)
+        self.metricsWidget.axes[0].set_xlim([0, 1.1 * np.max(counts)])
+        self.metricsWidget.canvas.draw()
 
         return
     
