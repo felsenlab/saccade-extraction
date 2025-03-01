@@ -416,6 +416,8 @@ class SaccadeLabelingGUI(QMainWindow):
         self.ui.pushButton_5.clicked.connect(self.onResetLinesButtonClicked)
         self.ui.pushButton_5.setToolTip('Push to reset the saccade onset and offset lines')
         self.ui.pushButton_6.clicked.connect(self.onCloseButtonClicked)
+        self.ui.comboBox.addItem('Amplitude (Descending)')
+        self.ui.comboBox.addItem('Amplitude (Ascending)')
         self.ui.comboBox.setEditable(False)
         self.ui.comboBox.activated.connect(self.onComboBoxActivated)
         
@@ -482,6 +484,7 @@ class SaccadeLabelingGUI(QMainWindow):
         self.ylim = np.array([-ymax, ymax])
 
         # Update widgets
+        self.onComboBoxActivated(None)
         self.updatePlots()
         self.updateMetricsWidget()
         self.updateRadioButtons()
@@ -637,6 +640,16 @@ class SaccadeLabelingGUI(QMainWindow):
                     continue
                 sampleOrder.append(sampleIndex)
             sampleOrder= np.array(sampleOrder)
+        elif text.lower().startswith('amplitude'):
+            amplitudes = list()
+            for wf in self.saccadeWaveforms[:, 0, :]:
+                dp = np.diff(wf)
+                iPeak = np.argmax(np.abs(dp))
+                amplitudes.append(dp[iPeak])
+            if 'descending' in text.lower():
+                sampleOrder = np.argsort(amplitudes)[::-1]
+            elif 'ascending' in text.lower():
+                sampleOrder = np.argsort(amplitudes)
 
         self.sampleOrder = sampleOrder
         self._i = 0
