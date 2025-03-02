@@ -66,7 +66,7 @@ def compareWithManualLabeling(
 
     #
     with h5py.File(rsdFile, 'r') as stream:
-        frameIndicesPredicted = np.array(stream['frame_indices'])
+        frameIndicesPredicted = np.array(stream['saccade_onset'])
 
     #
     matched = list()
