@@ -43,3 +43,41 @@ def validatePredictions(
     fig.legend()
 
     return fig, ax
+
+def compareWithManualLabeling(
+    csvFile,
+    rsdFile,
+    framerate,
+    key='frame',
+    maximumDistance=0.015
+    ):
+    """
+    """
+
+    with open(csvFile, 'r') as stream:
+        lines = stream.readlines()
+    names = lines[0].rstrip('\n').split(',')
+    index = np.where([n == key for n in names])[0].item()
+    frameIndicesTrue = list()
+    for ln in lines[1:]:
+        elements = ln.rstrip('\n').split(',')
+        frameIndicesTrue.append(int(elements[index]))
+    frameIndicesTrue = np.array(frameIndicesTrue)
+
+    #
+    with h5py.File(rsdFile, 'r') as stream:
+        frameIndicesPredicted = np.array(stream['frame_indices'])
+
+    #
+    matched = list()
+    for t1 in frameIndicesTrue:
+        dt = t1 - frameIndicesPredicted
+        closest = np.argmin(np.abs(dt))
+        t2 = frameIndicesPredicted[closest]
+        if ((t1 - t2) / framerate) < maximumDistance:
+            matched.append(True)
+        else:
+            matched.append(False)
+    matched = np.array(matched)
+
+    return matched.sum() / matched.size
