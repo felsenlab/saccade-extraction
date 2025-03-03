@@ -105,7 +105,8 @@ def createTrainingDataset(
 
 def trainModels(
     configFile,
-    trainingDatasetIndex=-1
+    trainingDataset=-1,
+    layerSizeRange=(4, 20),
     ):
     """
     Train saccade direction classifier and epoch regressor
@@ -123,7 +124,7 @@ def trainModels(
         timestamps.append(timestamp)
 
     sortedIndices = sorted(range(len(timestamps)), key=lambda i: timestamps[i])
-    targetDirectory = folders[sortedIndices[trainingDatasetIndex]]
+    targetDirectory = folders[sortedIndices[trainingDataset]]
 
     #
     print(f'Training models with training data from {targetDirectory.name} ...')
@@ -137,8 +138,8 @@ def trainModels(
     X1, y1 = X[inclusionMask, :], y[inclusionMask, 0]
     hiddenLayerSizes = list()
     for i in range(3):
-        for j in range(4, 13 + 1, 1):
-            hiddenLayerSizes.append(np.repeat(j, i + 1))
+        for j in range(layerSizeRange[0], layerSizeRange[1] + 1, 1):
+            hiddenLayerSizes.append(np.repeat(j, np.power(i, 2)))
     grid = {
         'hidden_layer_sizes': hiddenLayerSizes,
         'alpha': [0.0001, 0.001, 0.01, 0.1, 1],
@@ -166,8 +167,8 @@ def trainModels(
     inclusionMask = np.invert(np.isnan(y[:, 1:]).any(1))
     X2, y2 = X[inclusionMask, :], y[inclusionMask, 1:]
     for i in range(3):
-        for j in range(4, 13 + 1, 1):
-            hiddenLayerSizes.append(np.repeat(j, i + 1))
+        for j in range(layerSizeRange[0], layerSizeRange[1] + 1, 1):
+            hiddenLayerSizes.append(np.repeat(j, np.power(i, 2)))
     grid = {
         'hidden_layer_sizes': hiddenLayerSizes,
         'alpha': [0.0001, 0.001, 0.01, 0.1, 1],
