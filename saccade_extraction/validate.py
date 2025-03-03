@@ -48,8 +48,9 @@ def compareWithManualLabeling(
     csvFile,
     rsdFile,
     framerate,
-    key='frame',
-    maximumDistance=0.015
+    frameColumn='frame',
+    labelColumn='nasal_temporal',
+    maximumLag=0.015
     ):
     """
     """
@@ -57,7 +58,7 @@ def compareWithManualLabeling(
     with open(csvFile, 'r') as stream:
         lines = stream.readlines()
     names = lines[0].rstrip('\n').split(',')
-    index = np.where([n == key for n in names])[0].item()
+    index = np.where([n == frameColumn for n in names])[0].item()
     frameIndicesTrue = list()
     for ln in lines[1:]:
         elements = ln.rstrip('\n').split(',')
@@ -65,19 +66,45 @@ def compareWithManualLabeling(
     frameIndicesTrue = np.array(frameIndicesTrue)
 
     #
-    with h5py.File(rsdFile, 'r') as stream:
-        frameIndicesPredicted = np.array(stream['saccade_onset'])
+    index = np.where([n == labelColumn for n in names])[0].item()
+    saccadeLabelsTrue = list()
+    for ln in lines[1:]:
+        elements = ln.rstrip('\n').split(',')
+        saccadeLabelCoded = int(elements[index])
+        saccadeLabel = 'N' if saccadeLabelCoded == -1 else 'T'
+        saccadeLabelsTrue.append(saccadeLabel)
+    saccadeLabelsTrue = np.array(saccadeLabelsTrue)
 
     #
+    with h5py.File(rsdFile, 'r') as stream:
+        frameIndicesPredicted = np.array(stream['saccade_onset']).ravel()
+        saccadeLabelsPredicted = np.array([s.item().decode() for s in stream['saccade_labels']])
+
+    # Compute the true positive rate
     matched = list()
-    for t1 in frameIndicesTrue:
+    lags = list()
+    for t1, l1 in zip(frameIndicesTrue, saccadeLabelsTrue):
+
+        # Compute time lag
         dt = t1 - frameIndicesPredicted
         closest = np.argmin(np.abs(dt))
         t2 = frameIndicesPredicted[closest]
-        if ((t1 - t2) / framerate) < maximumDistance:
+        lag = abs(((t1 - t2) / framerate))
+        lags.append(lag)
+
+        #
+        l2 = saccadeLabelsPredicted[closest]
+
+        #
+        if (lag <= maximumLag) and (l1 == l2):
             matched.append(True)
         else:
             matched.append(False)
     matched = np.array(matched)
+    lags = np.array(lags)
+    tpr = matched.sum() / matched.size
 
-    return matched.sum() / matched.size
+    # TODO: Compute the false positive rate
+    fpr = None
+
+    return tpr, fpr, lags, frameIndicesTrue, frameIndicesPredicted
