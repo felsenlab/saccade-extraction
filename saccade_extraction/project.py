@@ -191,6 +191,8 @@ def extractRealSaccades(
         )
 
         # Direction of saccades
+        X = np.diff(putativeSaccadeWaveforms, axis=1) # Compute velocity
+        X = X / np.abs(X).max(1).reshape(-1, 1) # Normalize to peak velocity
         saccadeLabels = clf.predict(putativeSaccadeWaveforms[:, 0, :]).reshape(-1, 1)
         saccadeIndices = np.where(np.logical_or(
             saccadeLabels[:, 0] == -1,
