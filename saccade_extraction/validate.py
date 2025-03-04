@@ -40,6 +40,13 @@ def validatePredictions(
         alpha=0.25,
         label='Nasal saccades'
     )
+    ax.vlines(
+        saccadeOnsets[saccadeLabels == 0],
+        *ylim,
+        color='0.5',
+        alpha=0.25,
+        label='NaS'
+    )
     fig.legend()
 
     return fig, ax
