@@ -194,13 +194,14 @@ def extractRealSaccades(
         X = putativeSaccadeWaveforms[:, 0, :]
         X = np.diff(X, axis=1) # Compute velocity
         X = X / np.abs(X).max(axis=1).reshape(-1, 1) # Normalize to peak velocity
-        saccadeLabels = clf.predict(X).reshape(-1, 1)
-        saccadeIndices = np.where(np.logical_or(
-            saccadeLabels[:, 0] == -1,
-            saccadeLabels[:, 0] ==  1,
-            saccadeLabels[:, 0] ==  0,
-        ))[0]
-        nSaccades = np.sum(np.logical_or(saccadeLabels[:, 0] == -1, saccadeLabels[:, 0] == 1))
+        saccadeLabelsCoded = clf.predict(X).reshape(-1, 1)
+        saccadeIndices = np.where(np.vstack([
+            saccadeLabelsCoded[:, 0] == -1,
+            saccadeLabelsCoded[:, 0] ==  1,
+            saccadeLabelsCoded[:, 0] ==  0,
+        ]).any(0))[0]
+
+        nSaccades = np.sum(np.logical_or(saccadeLabelsCoded[:, 0] == -1, saccadeLabelsCoded[:, 0] == 1))
         print(f'{nSaccades} real saccades extracted from {dlcFile.name}')
 
         # Timing of saccades (in frame indices)
@@ -226,7 +227,11 @@ def extractRealSaccades(
         fp = targetDirectory.joinpath(f'{dlcFile.stem}_saccades.hdf')
         realSaccadeWaveforms = putativeSaccadeWaveforms[saccadeIndices, 0, :]
         realSaccadeEpochs = saccadeEpochs[saccadeIndices, :]
-        realSaccadeLabels = saccadeLabels[saccadeIndices, :]
+        realSaccadeLabelsCoded = saccadeLabelsCoded[saccadeIndices, :]
+        realSaccadeLabels = np.full_like(realSaccadeLabelsCoded, object)
+        realSaccadeLabels[realSaccadeLabelsCoded == -1] = 'T'
+        realSaccadeLabels[realSaccadeLabelsCoded ==  1] = 'N'
+        realSaccadeLabels[realSaccadeLabelsCoded ==  0] = 'X'
         with h5py.File(fp, 'w') as stream:
             ds = stream.create_dataset(
                 'saccade_waveforms',
@@ -249,14 +254,14 @@ def extractRealSaccades(
             ds = stream.create_dataset(
                 'saccade_labels_coded',
                 shape=(nSaccades, 1),
-                dtype=realSaccadeLabels.dtype,
-                data=realSaccadeLabels.reshape(-1, 1)
+                dtype=realSaccadeLabelsCoded.dtype,
+                data=realSaccadeLabelsCoded.reshape(-1, 1)
             )
             ds = stream.create_dataset(
                 'saccade_labels',
                 shape=(nSaccades, 1),
                 dtype=h5py.special_dtype(vlen=str),
-                data=np.array(['N' if l == 1 else 'T' for l in realSaccadeLabels], dtype=object).reshape(-1, 1)
+                data=realSaccadeLabels.reshape(-1, 1)
             )   
 
     return
