@@ -232,7 +232,6 @@ def extractRealSaccades(
         realSaccadeLabels = np.full_like(realSaccadeLabelsCoded, 'x', dtype=object)
         realSaccadeLabels[realSaccadeLabelsCoded == -1] = 't'
         realSaccadeLabels[realSaccadeLabelsCoded ==  1] = 'n'
-        import pdb; pdb.set_trace()
         with h5py.File(fp, 'w') as stream:
             ds = stream.create_dataset(
                 'saccade_waveforms',
