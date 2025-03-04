@@ -191,9 +191,10 @@ def extractRealSaccades(
         )
 
         # Direction of saccades
-        X = np.diff(putativeSaccadeWaveforms, axis=1) # Compute velocity
-        X = X / np.abs(X).max(1).reshape(-1, 1) # Normalize to peak velocity
-        saccadeLabels = clf.predict(putativeSaccadeWaveforms[:, 0, :]).reshape(-1, 1)
+        X = putativeSaccadeWaveforms[:, 0, :]
+        X = np.diff(X, axis=1) # Compute velocity
+        X = X / np.abs(X).max(axis=1).reshape(-1, 1) # Normalize to peak velocity
+        saccadeLabels = clf.predict(X).reshape(-1, 1)
         saccadeIndices = np.where(np.logical_or(
             saccadeLabels[:, 0] == -1,
             saccadeLabels[:, 0] ==  1,
@@ -202,7 +203,7 @@ def extractRealSaccades(
         print(f'{nSaccades} real saccades extracted from {dlcFile.name}')
 
         # Timing of saccades (in frame indices)
-        timeLags = reg.predict(putativeSaccadeWaveforms[:, 0, :])
+        timeLags = reg.predict(X)
         saccadeEpochs = list()
         for saccadeIndex in range(putativeSaccadeWaveforms.shape[0]):
             t = frameTimestamps[saccadeIndex]
