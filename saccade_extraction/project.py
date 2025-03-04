@@ -198,8 +198,9 @@ def extractRealSaccades(
         saccadeIndices = np.where(np.logical_or(
             saccadeLabels[:, 0] == -1,
             saccadeLabels[:, 0] ==  1,
+            saccadeLabels[:, 0] ==  0,
         ))[0]
-        nSaccades = saccadeIndices.size
+        nSaccades = np.sum(np.logical_or(saccadeLabels[:, 0] == -1, saccadeLabels[:, 0] == 1))
         print(f'{nSaccades} real saccades extracted from {dlcFile.name}')
 
         # Timing of saccades (in frame indices)
