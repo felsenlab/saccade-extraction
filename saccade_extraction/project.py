@@ -228,10 +228,9 @@ def extractRealSaccades(
         realSaccadeWaveforms = putativeSaccadeWaveforms[saccadeIndices, 0, :]
         realSaccadeEpochs = saccadeEpochs[saccadeIndices, :]
         realSaccadeLabelsCoded = saccadeLabelsCoded[saccadeIndices, :]
-        realSaccadeLabels = np.full_like(realSaccadeLabelsCoded, object)
-        realSaccadeLabels[realSaccadeLabelsCoded == -1] = 'T'
-        realSaccadeLabels[realSaccadeLabelsCoded ==  1] = 'N'
-        realSaccadeLabels[realSaccadeLabelsCoded ==  0] = 'X'
+        realSaccadeLabels = np.full_like(realSaccadeLabelsCoded, 'x', dtype=object)
+        realSaccadeLabels[realSaccadeLabelsCoded == -1] = 't'
+        realSaccadeLabels[realSaccadeLabelsCoded ==  1] = 'n'
         with h5py.File(fp, 'w') as stream:
             ds = stream.create_dataset(
                 'saccade_waveforms',
