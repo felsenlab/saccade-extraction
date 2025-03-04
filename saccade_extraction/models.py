@@ -131,6 +131,8 @@ def trainModels(
 
     # Load samples and labels
     X = np.load(targetDirectory.joinpath('samples.npy'))
+    X = np.diff(X, axis=1) # Compute velocity
+    X = X / np.abs(X).max(1).reshape(-1, 1) # Normalize to peak velocity
     y = np.load(targetDirectory.joinpath('labels.npy'))
 
     # Train clasifier
