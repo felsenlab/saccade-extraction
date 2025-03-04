@@ -201,8 +201,9 @@ def extractRealSaccades(
             saccadeLabelsCoded[:, 0] ==  0,
         ]).any(0))[0]
 
-        nSaccades = np.sum(np.logical_or(saccadeLabelsCoded[:, 0] == -1, saccadeLabelsCoded[:, 0] == 1))
-        print(f'{nSaccades} real saccades extracted from {dlcFile.name}')
+        nSaccadesReal = np.sum(np.logical_or(saccadeLabelsCoded[:, 0] == -1, saccadeLabelsCoded[:, 0] == 1))
+        nSaccadesTotal = putativeSaccadeWaveforms.shape[0]
+        print(f'{nSaccadesReal} real saccades extracted from {dlcFile.name}')
 
         # Timing of saccades (in frame indices)
         timeLags = reg.predict(X)
@@ -241,25 +242,25 @@ def extractRealSaccades(
             )
             ds = stream.create_dataset(
                 'saccade_onset',
-                shape=(nSaccades, 1),
+                shape=(nSaccadesTotal, 1),
                 dtype=realSaccadeEpochs.dtype,
                 data=realSaccadeEpochs[:, 0].reshape(-1, 1)
             )
             ds = stream.create_dataset(
                 'saccade_offset',
-                shape=(nSaccades, 1),
+                shape=(nSaccadesTotal, 1),
                 dtype=realSaccadeEpochs.dtype,
                 data=realSaccadeEpochs[:, 1].reshape(-1, 1)
             )
             ds = stream.create_dataset(
                 'saccade_labels_coded',
-                shape=(nSaccades, 1),
+                shape=(nSaccadesTotal, 1),
                 dtype=realSaccadeLabelsCoded.dtype,
                 data=realSaccadeLabelsCoded.reshape(-1, 1)
             )
             ds = stream.create_dataset(
                 'saccade_labels',
-                shape=(nSaccades, 1),
+                shape=(nSaccadesTotal, 1),
                 dtype=h5py.special_dtype(vlen=str),
                 data=realSaccadeLabels.reshape(-1, 1)
             )   
