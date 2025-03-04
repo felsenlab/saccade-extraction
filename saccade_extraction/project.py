@@ -209,6 +209,7 @@ def extractRealSaccades(
         timeLags = reg.predict(X)
         saccadeEpochs = list()
         for saccadeIndex in range(putativeSaccadeWaveforms.shape[0]):
+            saccadeLabel = saccadeLabelsCoded[saccadeIndex]
             t = frameTimestamps[saccadeIndex]
             i = frameIndices[saccadeIndex]
             t0 = np.interp(
@@ -220,7 +221,11 @@ def extractRealSaccades(
             tStop = t0 + timeLags[saccadeIndex, 1]
             iStart = np.interp(tStart, t, i)
             iStop = np.interp(tStop, t, i)
-            saccadeEpoch = np.array([iStart, iStop])
+            if saccadeLabel == 0:
+                i0 = np.interp(t0, t, i).item()
+                saccadeEpoch = np.array([i0, np.nan])
+            else:
+                saccadeEpoch = np.array([iStart, iStop])
             saccadeEpochs.append(saccadeEpoch)
         saccadeEpochs = np.around(np.array(saccadeEpochs), 3)
 
