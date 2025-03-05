@@ -1,4 +1,4 @@
 from saccade_extraction.models import createTrainingDataset, trainModels
 from saccade_extraction.project import initializeProject, addNewSessions, labelPutativeSaccades, extractRealSaccades
-from saccade_extraction.validate import visualizePredictions, quanitfyPerformance
+from saccade_extraction.validate import visualizePredictions, quantifyPerformance
 from saccade_extraction.pose import loadPoseEstimates, extractPutativeSaccades
