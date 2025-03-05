@@ -5,9 +5,9 @@ import h5py
 import pathlib as pl
 import shutil
 
-def validatePredictions(
-    dlcFile,
-    rsdFile,
+def visualizePredictions(
+    poseEstimates,
+    saccadePredictions,
     likelihoodThreshold=0.95,
     windowSize=500,
     ):
@@ -15,7 +15,7 @@ def validatePredictions(
     """
 
     pose, projections, uHorizontal, uVertical = computePoseProjections(
-        dlcFile,
+        poseEstimates,
         likelihoodThreshold
     )
 
@@ -25,12 +25,12 @@ def validatePredictions(
     ylim = ax.get_ylim()
     
     #
-    with h5py.File(rsdFile, 'r') as stream:
+    with h5py.File(saccadePredictions, 'r') as stream:
         saccadeLabels = np.array(stream['saccade_labels_coded']).ravel()
         saccadeOnsets = np.array(stream['saccade_onset']).ravel()
-    if type(dlcFile) != pl.Path:
-        dlcFile = pl.Path(dlcFile)
-    targetDirectory = dlcFile.parent.joinpath('figures')
+    if type(poseEstimates) != pl.Path:
+        poseEstimates = pl.Path(poseEstimates)
+    targetDirectory = poseEstimates.parent.joinpath('figures')
     if targetDirectory.exists():
         shutil.rmtree(targetDirectory)
     targetDirectory.mkdir()
@@ -40,23 +40,27 @@ def validatePredictions(
         *ylim,
         color='r',
         alpha=0.25,
-        label='Temporal saccades'
+        label='Temporal saccades',
+        lw=0.5
     )
     ax.vlines(
         saccadeOnsets[saccadeLabels == 1],
         *ylim,
         color='b',
         alpha=0.25,
-        label='Nasal saccades'
+        label='Nasal saccades',
+        lw=0.5
     )
     ax.vlines(
         saccadeOnsets[saccadeLabels == 0],
         *ylim,
         color='0.5',
         alpha=0.25,
-        label='NaS'
+        label='NaS',
+        lw=0.5
     )
     fig.legend()
+    ax.set_ylim(ylim)
 
     #
     for i, x1 in enumerate(range(0, t.size, windowSize)):
@@ -67,7 +71,7 @@ def validatePredictions(
             targetDirectory.joinpath(filename),
             dpi=300
         )
-    fig.close()
+    plt.close(fig)
 
     return fig, ax
 
