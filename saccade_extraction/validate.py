@@ -39,25 +39,25 @@ def visualizePredictions(
         saccadeOnsets[saccadeLabels == -1],
         *ylim,
         color='r',
-        alpha=0.25,
+        alpha=0.7,
         label='Temporal saccades',
-        lw=0.5
+        lw=0.7
     )
     ax.vlines(
         saccadeOnsets[saccadeLabels == 1],
         *ylim,
         color='b',
-        alpha=0.25,
+        alpha=0.7,
         label='Nasal saccades',
-        lw=0.5
+        lw=0.7
     )
     ax.vlines(
         saccadeOnsets[saccadeLabels == 0],
         *ylim,
         color='0.5',
-        alpha=0.25,
+        alpha=0.7,
         label='NaS',
-        lw=0.5
+        lw=0.7
     )
     fig.legend()
     ax.set_ylim(ylim)
