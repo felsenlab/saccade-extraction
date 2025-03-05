@@ -2,11 +2,13 @@ from saccade_extraction.pose import loadPoseEstimates, computePoseProjections
 from matplotlib import pylab as plt
 import numpy as np
 import h5py
+import pathlib as pl
 
 def validatePredictions(
     dlcFile,
     rsdFile,
     likelihoodThreshold=0.95,
+    windowSize=500,
     ):
     """
     """
@@ -25,6 +27,9 @@ def validatePredictions(
     with h5py.File(rsdFile, 'r') as stream:
         saccadeLabels = np.array(stream['saccade_labels_coded']).ravel()
         saccadeOnsets = np.array(stream['saccade_onset']).ravel()
+    if type(dlcFile) != pl.Path:
+        dlcFile = pl.Path(dlcFile)
+    targetDirectory = dlcFile.parent.joinpath('figures')
 
     ax.vlines(
         saccadeOnsets[saccadeLabels == -1],
@@ -48,6 +53,17 @@ def validatePredictions(
         label='NaS'
     )
     fig.legend()
+
+    #
+    for i, x1 in enumerate(range(0, t.size, windowSize)):
+        x2 = x1 + windowSize
+        ax.set_xlim([x1, x2])
+        filename = f'epoch{i + 1}.png'
+        fig.savefig(
+            targetDirectory.joinpath(filename),
+            dpi=300
+        )
+    fig.close()
 
     return fig, ax
 
