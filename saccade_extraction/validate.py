@@ -67,45 +67,56 @@ def validatePredictions(
 
     return fig, ax
 
-def compareWithManualLabeling(
-    csvFile,
-    rsdFile,
-    framerate,
-    frameColumn='frame',
-    labelColumn='nasal_temporal',
-    maximumLag=0.015
+def quanitfyPerformance(
+    manualLabeling,
+    modelPredictions,
+    interframeIntervals,
+    maximumLag=0.01
     ):
     """
     """
 
-    with open(csvFile, 'r') as stream:
+    framerate = round(1 / (np.median(np.loadtxt(interframeIntervals)) / 1000000000), 3)
+    with open(manualLabeling, 'r') as stream:
         lines = stream.readlines()
     names = lines[0].rstrip('\n').split(',')
-    index = np.where([n == frameColumn for n in names])[0].item()
+
+    # Exclude "special" saccades
+    index = np.where([n == 'special' for n in names])[0].item()
+    saccadeIndices = list()
+    for saccadeIndex, ln in enumerate(lines[1:]):
+        elements = ln.rstrip('\n').split(',')
+        flag = bool(int(elements[index]))
+        if flag:
+            continue
+        saccadeIndices.append(saccadeIndex)
+    saccadeIndices = np.array(saccadeIndices)
+
+    # Extract the frame indices for manually labeled saccades
+    index = np.where([n == 'frame' for n in names])[0].item()
     frameIndicesTrue = list()
     for ln in lines[1:]:
         elements = ln.rstrip('\n').split(',')
         frameIndicesTrue.append(int(elements[index]))
-    frameIndicesTrue = np.array(frameIndicesTrue)
+    frameIndicesTrue = np.array(frameIndicesTrue)[saccadeIndices]
 
-    #
-    index = np.where([n == labelColumn for n in names])[0].item()
+    # Extract the saccade labels for manually labeled saccades
+    index = np.where([n == 'nasal' for n in names])[0].item()
     saccadeLabelsTrue = list()
     for ln in lines[1:]:
         elements = ln.rstrip('\n').split(',')
         saccadeLabelCoded = int(elements[index])
-        saccadeLabel = 'N' if saccadeLabelCoded == -1 else 'T'
+        saccadeLabel = 'n' if saccadeLabelCoded == 1 else 't'
         saccadeLabelsTrue.append(saccadeLabel)
-    saccadeLabelsTrue = np.array(saccadeLabelsTrue)
+    saccadeLabelsTrue = np.array(saccadeLabelsTrue)[saccadeIndices]
 
-    #
-    with h5py.File(rsdFile, 'r') as stream:
+    # Extract frame indices and labels for predicted saccades
+    with h5py.File(modelPredictions, 'r') as stream:
         frameIndicesPredicted = np.array(stream['saccade_onset']).ravel()
         saccadeLabelsPredicted = np.array([s.item().decode() for s in stream['saccade_labels']])
 
     # Compute the true positive rate
     matched = list()
-    lags = list()
     for t1, l1 in zip(frameIndicesTrue, saccadeLabelsTrue):
 
         # Compute time lag
@@ -113,7 +124,6 @@ def compareWithManualLabeling(
         closest = np.argmin(np.abs(dt))
         t2 = frameIndicesPredicted[closest]
         lag = abs(((t1 - t2) / framerate))
-        lags.append(lag)
 
         #
         l2 = saccadeLabelsPredicted[closest]
@@ -124,10 +134,27 @@ def compareWithManualLabeling(
         else:
             matched.append(False)
     matched = np.array(matched)
-    lags = np.array(lags)
     tpr = matched.sum() / matched.size
 
-    # TODO: Compute the false positive rate
-    fpr = None
+    # Compute the false positive rate
+    unmatched = list()
+    for t1, l1 in zip(frameIndicesPredicted, saccadeLabelsPredicted):
 
-    return tpr, fpr, lags, frameIndicesTrue, frameIndicesPredicted
+        #
+        dt = t1 - frameIndicesTrue
+        closest = np.argmin(np.abs(dt))
+        t2 = frameIndicesTrue[closest]
+        lag = abs(((t1 - t2) / framerate))
+
+        #
+        l2 = saccadeLabelsTrue[closest]
+
+        #
+        if (lag <= maximumLag) and (l1 == l2):
+            unmatched.append(False)
+        else:
+            unmatched.append(True)
+    unmatched = np.array(unmatched)
+    fpr = unmatched.sum() / unmatched.size
+
+    return tpr, fpr
