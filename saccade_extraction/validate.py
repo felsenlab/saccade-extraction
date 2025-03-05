@@ -3,6 +3,7 @@ from matplotlib import pylab as plt
 import numpy as np
 import h5py
 import pathlib as pl
+import shutil
 
 def validatePredictions(
     dlcFile,
@@ -30,6 +31,9 @@ def validatePredictions(
     if type(dlcFile) != pl.Path:
         dlcFile = pl.Path(dlcFile)
     targetDirectory = dlcFile.parent.joinpath('figures')
+    if targetDirectory.exists():
+        shutil.rmtree(targetDirectory)
+    targetDirectory.mkdir()
 
     ax.vlines(
         saccadeOnsets[saccadeLabels == -1],
