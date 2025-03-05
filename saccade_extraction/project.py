@@ -230,7 +230,8 @@ def extractRealSaccades(
         saccadeEpochs = np.around(np.array(saccadeEpochs), 3)
 
         # Save the results
-        fp = targetDirectory.joinpath(f'{dlcFile.stem}_saccades.hdf')
+        stem = dlcFile.stem.split('DLC')[0]
+        fp = targetDirectory.joinpath(f'{stem}_saccades.hdf')
         realSaccadeWaveforms = putativeSaccadeWaveforms[saccadeIndices, 0, :]
         realSaccadeEpochs = saccadeEpochs[saccadeIndices, :]
         realSaccadeLabelsCoded = saccadeLabelsCoded[saccadeIndices, :]
