@@ -4,6 +4,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle
 from matplotlib import ticker
 from matplotlib.pylab import subplots, barh
 import numpy as np
@@ -283,12 +284,23 @@ class SaccadeLabelingWidget(QWidget):
             'hline': np.full([2, 2], object),
             'wave': np.full([2, 2], object),
         }
+        self.patches = np.full([2, 2], object)
         for (i, j), ax in np.ndenumerate(self.axes):
+
+            # Lines
             for key in self.lines.keys():
                 line = Line2D([], [], color='k', alpha=0.3)
                 ax.add_line(line)
                 line.set_visible(False)
                 self.lines[key][i, j] = line
+
+            # Patches
+            patch = Rectangle([0, 0], 0, 0)
+            ax.add_patch(patch)
+            patch.set_facecolor('k')
+            patch.set_alpha(0.1)
+            patch.set_visible(False)
+            self.patches[i, j] = patch
 
         return
 
@@ -865,11 +877,24 @@ class SaccadeLabelingGUI(QMainWindow):
                 ln.set_color(c)
                 ln.set_alpha(a)
 
+        # Draw the patches
+        for (i, j), ax in np.ndenumerate(self.labelingWidget.axes):
+            patch = self.labelingWidget.patches[i, j]
+            patch.set_xy([
+                -1 * self.configData['minimumPeakDistance'],
+                self.ylim[0]
+            ])
+            patch.set_width(2 * self.configData['minimumPeakDistance'])
+            patch.set_height(np.diff(self.ylim).item())
+            if patch.get_visible() == False:
+                patch.set_visible(True)
+
         # Set the x and y limits
         if resetLimits:
             for ax in self.labelingWidget.axes.ravel():
                 ax.set_ylim(self.ylim)
                 ax.set_xlim(self.xlim)
+
 
         # Draw
         self.labelingWidget.canvas.draw()
@@ -896,7 +921,8 @@ class SaccadeLabelingGUI(QMainWindow):
             ])
             label.set_text(f'{counts[i]:.0f}')
             label.set_visible(True)
-        self.metricsWidget.axes[0].set_xlim([0, 1.1 * np.max(counts)])
+        if np.max(counts) != 0:
+            self.metricsWidget.axes[0].set_xlim([0, 1.1 * np.max(counts)])
         self.metricsWidget.canvas.draw()
 
         return
