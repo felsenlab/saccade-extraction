@@ -111,11 +111,10 @@ def computePoseProjections(
 
 def extractPutativeSaccades(
     configFile,
-    dlcFile,
-    ifiFile=None,
-    framerate=None,
+    poseEstimates,
+    interframeIntervals,
     likelihoodThreshold=0.95,
-    maximumDataLoss=0.1,
+    maximumDataLoss=0.15,
     ):
     """
     """
@@ -125,7 +124,8 @@ def extractPutativeSaccades(
         config = yaml.safe_load(stream)
 
     # Load pose and projections onto N-T and U-L axes
-    pose, projections, uHorizontal, uVertical = computePoseProjections(dlcFile, likelihoodThreshold)
+    pose, projections, uHorizontal, uVertical = computePoseProjections(poseEstimates, likelihoodThreshold)
+    nFrames = pose.shape[0]
 
     # Check how much of the eye position data is NaN values
     dataLoss = np.isnan(projections[:, 0]).sum() / projections.shape[0]
@@ -133,16 +133,13 @@ def extractPutativeSaccades(
         raise Exception(f'{dataLoss * 100:.2f}% of pose estimates are NaN values (more than threshold of {maximumDataLoss * 100:.0f}%)')
 
     # Compute the empirical framerate
-    if ifiFile is not None:
-        ifi = np.loadtxt(ifiFile)[1:] / 1000000000 # Drop the first interval
-    elif framerate is not None:
-        ifi = np.full(projections.shape[0] - 1, 1 / framerate)
-    else:
-        raise Exception('Must provide either the timestamps file or the approximate framerate')
+    ifi = np.loadtxt(interframeIntervals)[1:] / 1000000000 # Drop the first interval
     fps = 1 / np.median(ifi)
+    if (ifi.size + 1) != nFrames:
+        print(f'WARNING: The number of frames ({nFrames}) is different than the number of timestamps ({ifi.size + 1})')
+        print(f'INFO: Assuming a constant framerate of {fps:.2f}')
+        ifi = np.full(nFrames - 1, np.median(ifi))
     tFrames = np.concatenate([[0,], np.cumsum(ifi)])
-    if pose.shape[0] != len(tFrames):
-        raise Exception('The number of frames is different than the number of timestamps')
 
     # Project
     dv = np.diff(projections, axis=0)
@@ -196,6 +193,6 @@ def extractPutativeSaccades(
     frameIndices = np.around(np.array(frameIndices), 3)
     frameTimestamps = np.around(np.array(frameTimestamps), 3)
     saccadeWaveforms = np.around(np.array(saccadeWaveforms), 3)
-    print(f'{saccadeLoss} out of {peakIndices.size} putative saccades lost due to incomplete pose estimation')
+    print(f'INFO: {saccadeLoss} out of {peakIndices.size} putative saccades lost due to uncertainty in pose estimation')
 
     return saccadeWaveforms, frameIndices, frameTimestamps
