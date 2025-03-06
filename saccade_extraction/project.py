@@ -42,7 +42,7 @@ def initializeProject(
         'minimumPeakDistance': 0.07, # Peak distance minimum (in seconds)
         'responseWindow': [-0.2, 0.2],
         'waveformSize': 51,
-        'smoothingWindowSize': 0.02,
+        'smoothingWindowSize': 0.005,
     }
     configFile = pl.Path(targetDirectory).joinpath('config.yaml')
     with open(configFile, 'w') as stream:
