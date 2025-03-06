@@ -49,6 +49,36 @@ def initializeProject(
 
     return configFile
 
+def collectFileSets(
+    root
+    ):
+    """
+    Explore subdirectories under root looking for folders that contain pose
+    estimates and interframe intervals
+    """
+
+    if type(root) != pl.Path:
+        root = pl.Path(root)
+
+    fileSets = list()
+    for folder in root.rglob('*'):
+        if folder.is_dir() == False:
+            continue
+        fileSet = list()
+        for file in folder.iterdir():
+            if file.suffix == '.csv' and 'DLC' in file.name:
+                fileSet.append(file)
+                break
+        for file in folder.iterdir():
+            if file.suffix == '.txt' and 'timestamps' in file.name:
+                fileSet.append(file)
+                break
+        if len(fileSet) != 2:
+            continue
+        fileSets.append(tuple(fileSet))
+
+    return fileSets
+
 def addNewSessions(
     configFile,
     fileSets,
