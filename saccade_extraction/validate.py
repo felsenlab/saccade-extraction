@@ -49,7 +49,8 @@ def visualizePredictions(
     saccadePredictions,
     manualLabeling=None,
     likelihoodThreshold=0.95,
-    windowSize=500,
+    epochSize=500,
+    generateEpochImages=False,
     ):
     """
     """
@@ -134,16 +135,16 @@ def visualizePredictions(
     ax.set_ylim(ylim)
 
     #
-    for i, x1 in enumerate(range(0, t.size, windowSize)):
-        x2 = x1 + windowSize
-        ax.set_xlim([x1, x2])
-        filename = f'epoch{i + 1}.png'
-        fig.savefig(
-            targetDirectory.joinpath(filename),
-            dpi=300
-        )
-        fig.tight_layout()
-    plt.close(fig)
+    if generateEpochImages:
+        for i, x1 in enumerate(range(0, t.size, epochSize)):
+            x2 = x1 + epochSize
+            ax.set_xlim([x1, x2])
+            filename = f'epoch{i + 1}.png'
+            fig.savefig(
+                targetDirectory.joinpath(filename),
+                dpi=300
+            )
+            fig.tight_layout()
 
     return fig, ax
 
