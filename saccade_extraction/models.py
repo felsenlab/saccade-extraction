@@ -5,7 +5,6 @@ import pathlib as pl
 from datetime import datetime
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-from sklearn.metrics import r2_score, make_scorer
 import h5py
 
 class MLPRegressorWithStandardization(MLPRegressor):
@@ -87,7 +86,7 @@ def createTrainingDataset(
     X = np.array(X)
     y = np.array(y).reshape(-1, 3)
     nSamples = X.shape[0]
-    print(f'Training dataset generated with {nSamples} samples from {nSessions} sessions')
+    print(f'INFO: Training dataset generated with {nSamples} samples from {nSessions} sessions')
 
     #
     timestamp = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
@@ -163,7 +162,7 @@ def trainModels(
 
     # Report performance
     score = search.best_score_
-    print(f"Best classifier selected, score={score:.2f}")
+    print(f"INFO: Best classifier selected (score={score:.2f})")
 
     # Fit regressor
     inclusionMask = np.invert(np.isnan(y[:, 1:]).any(1))
@@ -191,7 +190,7 @@ def trainModels(
     search.fit(X2, y2)
     reg = search.best_estimator_
     score = search.best_score_
-    print(f'Best regressor selected, score={score:.2f}')
+    print(f'INFO: Best regressor selected (score={score:.2f})')
 
     # Save trained models
     with open(targetDirectory.joinpath('classifier.pkl'), 'wb') as stream:
