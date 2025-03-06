@@ -38,10 +38,11 @@ def initializeProject(
     # Default configuration file
     defaultSettings = {
         'projectDirectory': str(targetDirectory), # Project directory
-        'velocityThreshold': 99, # Velocity threshold (as percentile)
-        'minimumPeakDistance': 0.1, # Peak distance minimum (in seconds)
-        'responseWindow': [-0.1, 0.1],
-        'nFeatures': 50,
+        'velocityThreshold': 95, # Velocity threshold (as percentile)
+        'minimumPeakDistance': 0.07, # Peak distance minimum (in seconds)
+        'responseWindow': [-0.2, 0.2],
+        'waveformSize': 51,
+        'smoothingWindowSize': 0.02,
     }
     configFile = pl.Path(targetDirectory).joinpath('config.yaml')
     with open(configFile, 'w') as stream:

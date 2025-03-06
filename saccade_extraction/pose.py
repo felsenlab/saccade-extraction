@@ -2,6 +2,7 @@ import yaml
 import polars
 import numpy as np
 from scipy.signal import find_peaks
+from scipy.ndimage import gaussian_filter1d
 from decimal import Decimal
 
 def loadPoseEstimates(
@@ -121,7 +122,7 @@ def extractPutativeSaccades(
 
     #
     with open(configFile, 'r') as stream:
-        config = yaml.safe_load(stream)
+        configData = yaml.safe_load(stream)
 
     # Load pose and projections onto N-T and U-L axes
     pose, projections, uHorizontal, uVertical = computePoseProjections(poseEstimates, likelihoodThreshold)
@@ -141,13 +142,18 @@ def extractPutativeSaccades(
         ifi = np.full(nFrames - 1, np.median(ifi))
     tFrames = np.concatenate([[0,], np.cumsum(ifi)])
 
-    # Project
-    dv = np.diff(projections, axis=0)
-    vmin = np.nanpercentile(dv[:, 0], config['velocityThreshold'])
-    distanceThreshold = np.ceil(config['minimumPeakDistance'] * fps)
+    # Smooth signal
+    sigma = round(fps * configData['smoothingWindowSize'], 2)
+    horizontalEyePosition = gaussian_filter1d(projections[:, 0], sigma=sigma)
+    horizontalEyeVelocity = np.diff(horizontalEyePosition)
+    verticalEyePosition = gaussian_filter1d(projections[:, 1], sigma=sigma)
+
+    # Detect peaks
+    heightThreshold = np.nanpercentile(horizontalEyeVelocity, configData['velocityThreshold'])
+    distanceThreshold = np.ceil(configData['minimumPeakDistance'] * fps)
     peakIndices, peakProps = find_peaks(
-        np.abs(dv[:, 0]),
-        height=vmin,
+        np.abs(horizontalEyeVelocity),
+        height=heightThreshold,
         distance=distanceThreshold
     )
 
@@ -162,9 +168,9 @@ def extractPutativeSaccades(
 
         #
         tPeak = (tFrames[peakIndex] + tFrames[peakIndex + 1]) / 2
-        tLeft = float(Decimal(str(tPeak)) + Decimal(str(config['responseWindow'][0])))
-        tRight = float(Decimal(str(tPeak)) + Decimal(str(config['responseWindow'][1])))
-        tEval = np.linspace(tLeft, tRight, config['nFeatures'] + 1)
+        tLeft = float(Decimal(str(tPeak)) + Decimal(str(configData['responseWindow'][0])))
+        tRight = float(Decimal(str(tPeak)) + Decimal(str(configData['responseWindow'][1])))
+        tEval = np.linspace(tLeft, tRight, configData['waveformSize'] + 1)
 
         #
         iEval = np.around(np.interp(
@@ -175,8 +181,8 @@ def extractPutativeSaccades(
 
         #
         wf = np.array([
-            np.interp(tEval, tFrames, projections[:, 0]),
-            np.interp(tEval, tFrames, projections[:, 1])
+            np.interp(tEval, tFrames, horizontalEyePosition),
+            np.interp(tEval, tFrames, verticalEyePosition)
         ])
 
         #

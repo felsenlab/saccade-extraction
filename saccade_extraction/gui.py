@@ -775,7 +775,7 @@ class SaccadeLabelingGUI(QMainWindow):
         t1 = np.linspace(
             self.configData['responseWindow'][0],
             self.configData['responseWindow'][1],
-            self.configData['nFeatures'] + 1
+            self.configData['waveformSize'] + 1
         )
         t2 = np.interp(
             np.arange(0, t1.size - 1, 1) + 0.5,
