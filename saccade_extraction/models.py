@@ -213,9 +213,6 @@ def trainModels(
     # Fit regressor
     inclusionMask = np.invert(np.isnan(y[:, 1:]).any(1))
     X2, y2 = X[inclusionMask, :], y[inclusionMask, 1:]
-    for i in range(3):
-        for j in range(layerSizeRange[0], layerSizeRange[1] + 1, 1):
-            hiddenLayerSizes.append(np.repeat(j, np.power(i, 2)))
     grid = {
         'hidden_layer_sizes': hiddenLayerSizes,
         'alpha': [0.0001, 0.001, 0.01, 0.1, 1],
