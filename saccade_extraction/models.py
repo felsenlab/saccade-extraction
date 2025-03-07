@@ -183,9 +183,9 @@ def trainModels(
     inclusionMask = np.invert(np.isnan(y[:, 0]))
     X1, y1 = X[inclusionMask, :], y[inclusionMask, 0]
     hiddenLayerSizes = list()
-    for i in range(3):
+    for i in range(1, 3 + 1, 1):
         for j in range(layerSizeRange[0], layerSizeRange[1] + 1, 1):
-            hiddenLayerSizes.append(np.repeat(j, np.power(i, 2)))
+            hiddenLayerSizes.append(np.repeat(np.power(j, 2), i))
     grid = {
         'hidden_layer_sizes': hiddenLayerSizes,
         'alpha': [0.0001, 0.001, 0.01, 0.1, 1],
