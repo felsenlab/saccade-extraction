@@ -173,7 +173,7 @@ def trainModels(
     targetDirectory = folders[sortedIndices[trainingDataset]]
 
     #
-    print(f'Training models with training data from {targetDirectory.name} ...')
+    print(f'INFO: Training models with training data from {targetDirectory.name}')
 
     # Load samples and labels
     X = np.diff(np.load(targetDirectory.joinpath('samples.npy')), axis=1)
@@ -201,6 +201,7 @@ def trainModels(
         clf_,
         grid,
         cv=10,
+        verbose=3
     )
     search.fit(X1, y1.ravel())
     clf = search.best_estimator_
@@ -230,6 +231,7 @@ def trainModels(
         reg_,
         grid,
         cv=10,
+        verbose=3
     )
     search.fit(X2, y2)
     reg = search.best_estimator_
