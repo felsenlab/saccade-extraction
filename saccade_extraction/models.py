@@ -200,7 +200,7 @@ def trainModels(
     search = GridSearchCV(
         clf_,
         grid,
-        cv=10,
+        cv=5,
         verbose=3
     )
     search.fit(X1, y1.ravel())
@@ -227,7 +227,7 @@ def trainModels(
     search = GridSearchCV(
         reg_,
         grid,
-        cv=10,
+        cv=5,
         verbose=3
     )
     search.fit(X2, y2)
