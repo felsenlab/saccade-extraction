@@ -7,13 +7,60 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 import h5py
 
+class MLPClassifierWithStandardization(MLPClassifier):
+    """
+    """
+
+    def __init__(self, hidden_layer_sizes=(100,), activation='relu', solver='adam', 
+        alpha=0.0001, batch_size='auto', learning_rate='constant',
+        learning_rate_init=0.001, power_t=0.5, max_iter=200, shuffle=True, 
+        random_state=None, tol=1e-4, verbose=False, warm_start=False, 
+        momentum=0.9, nesterovs_momentum=True, early_stopping=False, 
+        validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-8, 
+        n_iter_no_change=10, max_fun=15000, mu=None, sigma=None):
+        """
+        Custom MLPClassifier that includes standardization parameters (mu, sigma).
+        """
+        self.mu = mu
+        self.sigma = sigma
+        super().__init__(
+            hidden_layer_sizes=hidden_layer_sizes, activation=activation, solver=solver, 
+            alpha=alpha, batch_size=batch_size, learning_rate=learning_rate, 
+            learning_rate_init=learning_rate_init, power_t=power_t, max_iter=max_iter, 
+            shuffle=shuffle, random_state=random_state, tol=tol, verbose=verbose, 
+            warm_start=warm_start, momentum=momentum, nesterovs_momentum=nesterovs_momentum, 
+            early_stopping=early_stopping, validation_fraction=validation_fraction, 
+            beta_1=beta_1, beta_2=beta_2, epsilon=epsilon, n_iter_no_change=n_iter_no_change, 
+            max_fun=max_fun
+        )
+
+    def fit(self, X, y):
+        """
+        """
+
+        self.mu = np.nanmean(y, axis=0)
+        self.sigma = np.nanstd(y, axis=0)
+        y = (y - self.mu) / self.sigma
+        super().fit(X, y)
+
+        return
+    
+    def predict(self, X):
+        """
+        """
+
+        y = super().predict(X)
+
+        return y * self.sigma + self.mu
+
 class MLPRegressorWithStandardization(MLPRegressor):
     """
     """
 
-    def __init__(self, mu=None, sigma=None, hidden_layer_sizes=(100,), activation='relu',
+    def __init__(self, hidden_layer_sizes=(100,), activation='relu',
         solver='adam', alpha=0.0001, batch_size='auto', learning_rate='constant', 
-        learning_rate_init=0.001, max_iter=200, tol=1e-4, verbose=False
+        learning_rate_init=0.001, max_iter=200, tol=1e-4, verbose=False,
+        mu=None, sigma=None,
         ):
         """
         Custom MLPRegressor that includes standardization parameters (mu, sigma).
@@ -129,9 +176,7 @@ def trainModels(
     print(f'Training models with training data from {targetDirectory.name} ...')
 
     # Load samples and labels
-    X = np.load(targetDirectory.joinpath('samples.npy'))
-    X = np.diff(X, axis=1) # Compute velocity
-    X = X / np.abs(X).max(1).reshape(-1, 1) # Normalize to peak velocity
+    X = np.diff(np.load(targetDirectory.joinpath('samples.npy')), axis=1)
     y = np.load(targetDirectory.joinpath('labels.npy'))
 
     # Train clasifier
@@ -155,7 +200,7 @@ def trainModels(
     search = GridSearchCV(
         clf_,
         grid,
-        cv=3,
+        cv=10,
     )
     search.fit(X1, y1.ravel())
     clf = search.best_estimator_
@@ -184,8 +229,7 @@ def trainModels(
     search = GridSearchCV(
         reg_,
         grid,
-        cv=3,
-        # scoring=make_scorer(r2_score)
+        cv=10,
     )
     search.fit(X2, y2)
     reg = search.best_estimator_
