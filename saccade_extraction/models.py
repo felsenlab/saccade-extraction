@@ -5,8 +5,16 @@ import pathlib as pl
 from datetime import datetime
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-from sklearn.metrics import root_mean_squared_error, make_scorer
+from sklearn.metrics import mean_squared_error, make_scorer
 import h5py
+
+def rootMeanSquaredError(y_true, y_pred, *args, **kwargs):
+    """
+    Implementation of the root mean squared error
+    """
+
+    return np.sqrt(mean_squared_error(y_true, y_pred, *args, **kwargs))
+
 
 class MLPClassifierWithStandardization(MLPClassifier):
     """
@@ -202,7 +210,7 @@ def trainModels(
 
     # Report performance
     score = search.best_score_
-    print(f"INFO: Best classifier selected (score={score:.2f})")
+    print(f"INFO: Best classifier selected (accuracy={score:.2f})")
 
     # Fit regressor
     inclusionMask = np.invert(np.isnan(y[:, 1:]).any(1))
@@ -221,12 +229,12 @@ def trainModels(
         grid,
         cv=5,
         verbose=3,
-        scoring=make_scorer(root_mean_squared_error)
+        scoring=make_scorer(rootMeanSquaredError)
     )
     search.fit(X2, y2)
     reg = search.best_estimator_
     score = search.best_score_
-    print(f'INFO: Best regressor selected (score={score:.2f})')
+    print(f'INFO: Best regressor selected (error={score:.2f} s)')
 
     # Save trained models
     with open(targetDirectory.joinpath('classifier.pkl'), 'wb') as stream:
