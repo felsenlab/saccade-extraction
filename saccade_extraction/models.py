@@ -152,7 +152,6 @@ def createTrainingDataset(
 def trainModels(
     configFile,
     trainingDataset=-1,
-    layerSizeRange=(4, 20),
     ):
     """
     Train saccade direction classifier and epoch regressor
@@ -182,20 +181,14 @@ def trainModels(
     # Train clasifier
     inclusionMask = np.invert(np.isnan(y[:, 0]))
     X1, y1 = X[inclusionMask, :], y[inclusionMask, 0]
-    hiddenLayerSizes = list()
-    for i in range(1, 3 + 1, 1):
-        for j in range(layerSizeRange[0], layerSizeRange[1] + 1, 1):
-            hiddenLayerSizes.append(np.repeat(np.power(j, 2), i))
     grid = {
-        'hidden_layer_sizes': hiddenLayerSizes,
-        'alpha': [0.0001, 0.001, 0.01, 0.1, 1],
-        'learning_rate_init': [0.01, 0.001, 0.0001]
+        'hidden_layer_sizes': [(n,) for n in configData['hiddenLayerSizes']],
+        'alpha': configData['regularizationPenalities'],
     }
     clf_ = MLPClassifier(
-        max_iter=10000,
+        max_iter=1000000,
         activation='relu',
         solver='adam',
-        learning_rate='constant'
     )
     search = GridSearchCV(
         clf_,
@@ -214,14 +207,12 @@ def trainModels(
     inclusionMask = np.invert(np.isnan(y[:, 1:]).any(1))
     X2, y2 = X[inclusionMask, :], y[inclusionMask, 1:]
     grid = {
-        'hidden_layer_sizes': hiddenLayerSizes,
-        'alpha': [0.0001, 0.001, 0.01, 0.1, 1],
-        'learning_rate_init': [0.01, 0.001, 0.0001]
+        'hidden_layer_sizes': [(n,) for n in configData['hiddenLayerSizes']],
+        'alpha': configData['regularizationPenalities'],
     }
     reg_ = MLPRegressorWithStandardization(
-        max_iter=10000,
+        max_iter=1000000,
         solver='adam',
-        learning_rate='constant',
         activation='relu',
     )
     search = GridSearchCV(

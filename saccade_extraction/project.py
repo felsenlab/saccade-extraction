@@ -43,6 +43,8 @@ def initializeProject(
         'responseWindow': [-0.2, 0.2],
         'waveformSize': 51,
         'smoothingWindowSize': 0.005,
+        'hiddenLayerSizes': [16, 256, 4096],
+        'regularizationPenalties': [0.01, 1.0, 10.0],
     }
     configFile = pl.Path(targetDirectory).joinpath('config.yaml')
     with open(configFile, 'w') as stream:
