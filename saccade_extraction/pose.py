@@ -116,6 +116,7 @@ def extractPutativeSaccades(
     interframeIntervals,
     likelihoodThreshold=0.95,
     maximumDataLoss=0.15,
+    maximumFrameDifference=0.01,
     ):
     """
     """
@@ -136,10 +137,17 @@ def extractPutativeSaccades(
     # Compute the empirical framerate
     ifi = np.loadtxt(interframeIntervals)[1:] / 1000000000 # Drop the first interval
     fps = 1 / np.median(ifi)
-    if (ifi.size + 1) != nFrames:
+    diff = ifi.size + 1 - nFrames # Difference in the number of frames
+    if diff != 0:
         print(f'WARNING: The number of frames ({nFrames}) is different than the number of timestamps ({ifi.size + 1})')
-        print(f'INFO: Assuming a constant framerate of {fps:.2f}')
-        ifi = np.full(nFrames - 1, np.median(ifi))
+        if diff / nFrames > maximumFrameDifference:
+            print(f'ERROR: Difference in frame count ({diff / nFrames:.2f}) is more than the threshold ({maximumFrameDifference:.2f})')
+            raise Exception(f'Difference in frame count ({diff / nFrames:.2f}) is more than the threshold ({maximumFrameDifference:.2f})')
+        else:
+            print(f'INFO: Assuming a constant framerate of {fps:.2f} fps')
+            ifi = np.full(nFrames - 1, np.median(ifi))
+
+    #
     tFrames = np.concatenate([[0,], np.cumsum(ifi)])
 
     # Smooth signal
