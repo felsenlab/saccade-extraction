@@ -141,8 +141,8 @@ def extractPutativeSaccades(
     if diff != 0:
         print(f'WARNING: The number of frames ({nFrames}) is different than the number of timestamps ({ifi.size + 1})')
         if diff / nFrames > maximumFrameDifference:
-            print(f'ERROR: Difference in frame count ({diff / nFrames:.2f}) is more than the threshold ({maximumFrameDifference:.2f})')
-            raise Exception(f'Difference in frame count ({diff / nFrames:.2f}) is more than the threshold ({maximumFrameDifference:.2f})')
+            print(f'ERROR: Difference in frame count ({diff / nFrames:.2f}) exceeds threshold ({maximumFrameDifference:.2f})')
+            raise Exception(f'Difference in frame count ({diff / nFrames:.2f}) is exceeds threshold ({maximumFrameDifference:.2f})')
         else:
             print(f'INFO: Assuming a constant framerate of {fps:.2f} fps')
             ifi = np.full(nFrames - 1, np.median(ifi))
