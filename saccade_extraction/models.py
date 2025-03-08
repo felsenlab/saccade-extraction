@@ -210,7 +210,7 @@ def trainModels(
 
     # Report performance
     score = search.best_score_
-    print(f"INFO: Best classifier selected (accuracy={score:.2f})")
+    print(f"INFO: Best classifier selected (accuracy={score:.3f})")
 
     # Fit regressor
     inclusionMask = np.invert(np.isnan(y[:, 1:]).any(1))
@@ -234,7 +234,7 @@ def trainModels(
     search.fit(X2, y2)
     reg = search.best_estimator_
     score = search.best_score_
-    print(f'INFO: Best regressor selected (error={score:.2f} s)')
+    print(f'INFO: Best regressor selected (error={score:.3f} s)')
 
     # Save trained models
     with open(targetDirectory.joinpath('classifier.pkl'), 'wb') as stream:
