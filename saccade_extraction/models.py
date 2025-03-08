@@ -183,7 +183,7 @@ def trainModels(
     X1, y1 = X[inclusionMask, :], y[inclusionMask, 0]
     grid = {
         'hidden_layer_sizes': [(n,) for n in configData['hiddenLayerSizes']],
-        'alpha': configData['regularizationPenalities'],
+        'alpha': configData['regularizationPenalties'],
     }
     clf_ = MLPClassifier(
         max_iter=1000000,
@@ -208,7 +208,7 @@ def trainModels(
     X2, y2 = X[inclusionMask, :], y[inclusionMask, 1:]
     grid = {
         'hidden_layer_sizes': [(n,) for n in configData['hiddenLayerSizes']],
-        'alpha': configData['regularizationPenalities'],
+        'alpha': configData['regularizationPenalties'],
     }
     reg_ = MLPRegressorWithStandardization(
         max_iter=1000000,
