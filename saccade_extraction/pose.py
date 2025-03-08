@@ -115,7 +115,7 @@ def extractPutativeSaccades(
     poseEstimates,
     interframeIntervals,
     likelihoodThreshold=0.95,
-    maximumDataLoss=0.15,
+    maximumFrameLoss=0.15,
     maximumFrameDifference=0.01,
     ):
     """
@@ -130,9 +130,9 @@ def extractPutativeSaccades(
     nFrames = pose.shape[0]
 
     # Check how much of the eye position data is NaN values
-    dataLoss = np.isnan(projections[:, 0]).sum() / projections.shape[0]
-    if dataLoss > maximumDataLoss:
-        raise Exception(f'{dataLoss * 100:.2f}% of pose estimates are NaN values (more than threshold of {maximumDataLoss * 100:.0f}%)')
+    frameLoss = np.isnan(projections[:, 0]).sum() / projections.shape[0]
+    if frameLoss > maximumFrameLoss:
+        raise Exception(f'{frameLoss * 100:.2f}% of pose estimates are NaN values (more than threshold of {maximumFrameLoss * 100:.0f}%)')
 
     # Compute the empirical framerate
     ifi = np.loadtxt(interframeIntervals)[1:] / 1000000000 # Drop the first interval
@@ -141,10 +141,9 @@ def extractPutativeSaccades(
     if diff != 0:
         print(f'WARNING: The number of frames ({nFrames}) is different than the number of timestamps ({ifi.size + 1})')
         if diff / nFrames > maximumFrameDifference:
-            print(f'ERROR: Difference in frame count ({diff / nFrames:.2f}) exceeds threshold ({maximumFrameDifference:.2f})')
             raise Exception(f'Difference in frame count ({diff / nFrames:.2f}) is exceeds threshold ({maximumFrameDifference:.2f})')
         else:
-            print(f'INFO: Assuming a constant framerate of {fps:.2f} fps')
+            print(f'WARNING: Assuming a constant framerate of {fps:.2f} fps')
             ifi = np.full(nFrames - 1, np.median(ifi))
 
     #
