@@ -5,6 +5,7 @@ import pathlib as pl
 from datetime import datetime
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.metrics import root_mean_squared_error, make_scorer
 import h5py
 
 class MLPClassifierWithStandardization(MLPClassifier):
@@ -219,7 +220,8 @@ def trainModels(
         reg_,
         grid,
         cv=5,
-        verbose=3
+        verbose=3,
+        scoring=make_scorer(root_mean_squared_error)
     )
     search.fit(X2, y2)
     reg = search.best_estimator_
