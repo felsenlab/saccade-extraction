@@ -680,29 +680,27 @@ class SaccadeLabelingGUI(QMainWindow):
 
         if event.type() == event.KeyPress:
             if event.key() in [QtCore.Qt.Key_Left, QtCore.Qt.Key_Right, QtCore.Qt.Key_A, QtCore.Qt.Key_Z]:
-                event.accept()
+                event.accept()  # Tell Qt the event is handled
+                
             if event.key() == QtCore.Qt.Key_Left:
                 self.onPreviousButtonClicked()
-                return True
+                return True  # Stop event propagation
+
             elif event.key() == QtCore.Qt.Key_Right:
                 self.onNextButtonClicked()
-                return True
+                return True  # Stop event propagation
+
             elif event.key() == QtCore.Qt.Key_A:
                 cb = self.checkBoxes[0]
-                if cb.isChecked():
-                    cb.setChecked(False)
-                else:
-                    cb.setChecked(True)
-                    self.checkBoxes[1].setChecked(False)
-                return True
+                cb.setChecked(not cb.isChecked())
+                self.checkBoxes[1].setChecked(False)
+                return True  # Stop event propagation
+
             elif event.key() == QtCore.Qt.Key_Z:
                 cb = self.checkBoxes[1]
-                if cb.isChecked():
-                    cb.setChecked(False)
-                else:
-                    cb.setChecked(True)
-                    self.checkBoxes[0].setChecked(False)
-                return True
+                cb.setChecked(not cb.isChecked())
+                self.checkBoxes[0].setChecked(False)
+                return True  # Stop event propagation
 
         return super().eventFilter(obj, event)
     
