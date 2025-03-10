@@ -444,8 +444,8 @@ class SaccadeLabelingGUI(QMainWindow):
                 widget.setEnabled(False)
 
         #
+        QtWidgets.QApplication.instance().installEventFilter(self)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.installEventFilter(self)
 
         return
     
@@ -682,10 +682,10 @@ class SaccadeLabelingGUI(QMainWindow):
         """
         """
 
-        if event.type() == event.KeyPress:
+        if event.type() == QtCore.QEvent.KeyPress:
             if event.key() in [QtCore.Qt.Key_Left, QtCore.Qt.Key_Right, QtCore.Qt.Key_A, QtCore.Qt.Key_Z]:
-                event.accept()  # Tell Qt the event is handled
-                
+                event.accept()  # Prevent Qt from handling navigation focus
+
             if event.key() == QtCore.Qt.Key_Left:
                 self.onPreviousButtonClicked()
                 return True  # Stop event propagation
