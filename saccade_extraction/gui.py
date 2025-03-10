@@ -679,7 +679,11 @@ class SaccadeLabelingGUI(QMainWindow):
         """
 
         if event.type() == event.KeyPress:
-            if event.key() == QtCore.Qt.Key_A:
+            if event.key() == QtCore.Qt.Key_Left:
+                self.onPreviousButtonClicked()
+            elif event.key() == QtCore.Qt.Key_Right:
+                self.onNextButtonClicked()
+            elif event.key() == QtCore.Qt.Key_A:
                 cb = self.checkBoxes[0]
                 if cb.isChecked():
                     cb.setChecked(False)
