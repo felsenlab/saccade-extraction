@@ -444,9 +444,13 @@ class SaccadeLabelingGUI(QMainWindow):
                 widget.setEnabled(False)
 
         #
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.installEventFilter(self)
 
         return
+    
+    def focusNextPrevChild(self, next):
+        return False  # Prevents Qt from handling navigation focus
     
     def onOpenButtonClicked(self):
         """
