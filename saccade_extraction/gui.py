@@ -651,12 +651,12 @@ class SaccadeLabelingGUI(QMainWindow):
         elif text.lower() == 'chronological':
             sampleOrder = np.arange(nSamples)
         elif text.lower() == 'labeled':
-            sampleOrder = np.concatentate([
+            sampleOrder = np.concatenate([
                 np.where(np.logical_not(np.isnan(self.y[:, 0]))), # Labeled samples first
                 np.where(np.isnan(self.y[:, 0])) # Then unlabeled samples
             ])
         elif text.lower() == 'unlabeled':
-            sampleOrder = np.concatentate([
+            sampleOrder = np.concatenate([
                 np.where(np.isnan(self.y[:, 0])), # Unlabeled samples first
                 np.where(np.logical_not(np.isnan(self.y[:, 0]))) # Then labeled samples
             ])
