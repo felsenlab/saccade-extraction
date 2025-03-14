@@ -652,13 +652,13 @@ class SaccadeLabelingGUI(QMainWindow):
             sampleOrder = np.arange(nSamples)
         elif text.lower() == 'labeled':
             sampleOrder = np.concatenate([
-                np.where(np.logical_not(np.isnan(self.y[:, 0]))), # Labeled samples first
-                np.where(np.isnan(self.y[:, 0])) # Then unlabeled samples
+                np.atleast_1d(np.where(np.logical_not(np.isnan(self.y[:, 0])))[0]), # Labeled samples first
+                np.atleast_1d(np.where(np.isnan(self.y[:, 0]))[0]) # Then unlabeled samples
             ])
         elif text.lower() == 'unlabeled':
             sampleOrder = np.concatenate([
-                np.where(np.isnan(self.y[:, 0])), # Unlabeled samples first
-                np.where(np.logical_not(np.isnan(self.y[:, 0]))) # Then labeled samples
+                np.atleast_1d(np.where(np.isnan(self.y[:, 0]))[0]), # Unlabeled samples first
+                np.atleast_1d(np.where(np.logical_not(np.isnan(self.y[:, 0])))[0]) # Then labeled samples
             ])
         elif text.lower().startswith('amplitude'):
             amplitudes = list()
