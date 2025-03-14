@@ -430,6 +430,7 @@ class SaccadeLabelingGUI(QMainWindow):
         self.ui.pushButton_6.clicked.connect(self.onCloseButtonClicked)
         self.ui.comboBox.addItem('Amplitude (Descending)')
         self.ui.comboBox.addItem('Amplitude (Ascending)')
+        self.ui.comboBox.addItem('Unlabeled')
         self.ui.comboBox.setEditable(False)
         self.ui.comboBox.activated.connect(self.onComboBoxActivated)
         
@@ -644,24 +645,27 @@ class SaccadeLabelingGUI(QMainWindow):
 
         text = self.ui.comboBox.currentText()
         nSamples = self.saccadeWaveforms.shape[0]
-        if text == 'Random':
+        if text.lower() == 'random':
             sampleOrder = np.arange(nSamples)
             np.random.shuffle(sampleOrder)
-        elif text == 'Chronological':
+        elif text.lower() == 'chronological':
             sampleOrder = np.arange(nSamples)
-        elif text == 'Labeled':
-            sampleOrder = [i for i in np.where(np.logical_not(np.isnan(self.y).all(1)))[0]]
-            for sampleIndex in np.arange(nSamples):
-                if sampleIndex in sampleOrder:
-                    continue
-                sampleOrder.append(sampleIndex)
-            sampleOrder= np.array(sampleOrder)
+        elif text.lower() == 'labeled':
+            sampleOrder = np.concatentate([
+                np.where(np.logical_not(np.isnan(self.y[:, 0]))), # Labeled samples first
+                np.where(np.isnan(self.y[:, 0])) # Then unlabeled samples
+            ])
+        elif text.lower() == 'unlabeled':
+            sampleOrder = np.concatentate([
+                np.where(np.isnan(self.y[:, 0])), # Unlabeled samples first
+                np.where(np.logical_not(np.isnan(self.y[:, 0]))) # Then labeled samples
+            ])
         elif text.lower().startswith('amplitude'):
             amplitudes = list()
             for wf in self.saccadeWaveforms[:, 0, :]:
-                dp = np.diff(wf)
-                iPeak = np.argmax(np.abs(dp))
-                amplitudes.append(dp[iPeak])
+                v = np.diff(wf)
+                iPeak = np.argmax(np.abs(v))
+                amplitudes.append(v[iPeak])
             if 'descending' in text.lower():
                 sampleOrder = np.argsort(amplitudes)[::-1]
             elif 'ascending' in text.lower():
