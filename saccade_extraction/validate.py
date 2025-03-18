@@ -29,7 +29,7 @@ def loadManualSaccadeLabeling(manualLabeling):
     frameIndicesTrue = list()
     for ln in lines[1:]:
         elements = ln.rstrip('\n').split(',')
-        frameIndicesTrue.append(int(elements[index]))
+        frameIndicesTrue.append(float(elements[index]))
     frameIndicesTrue = np.array(frameIndicesTrue)[saccadeIndices].astype(np.float64)
 
     # Extract the saccade labels for manually labeled saccades
