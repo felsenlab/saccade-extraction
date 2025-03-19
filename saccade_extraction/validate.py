@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 import pathlib as pl
 import shutil
+from scipy.signal import find_peaks
 
 def loadManualSaccadeLabeling(manualLabeling):
     """
@@ -38,7 +39,12 @@ def loadManualSaccadeLabeling(manualLabeling):
     for ln in lines[1:]:
         elements = ln.rstrip('\n').split(',')
         saccadeLabelCoded = int(elements[index])
-        saccadeLabel = 'n' if saccadeLabelCoded == 1 else 't'
+        if saccadeLabelCoded == -1:
+            saccadeLabel = 't'
+        elif saccadeLabelCoded == 1:
+            saccadeLabel = 'n'
+        else:
+            saccadeLabel = '-'
         saccadeLabelsTrue.append(saccadeLabel)
     saccadeLabelsTrue = np.array(saccadeLabelsTrue)[saccadeIndices]
 
@@ -148,60 +154,45 @@ def visualizePredictions(
 
     return fig, ax
 
-def quantifyPerformance(
-    manualLabeling,
-    modelPredictions,
-    interframeIntervals,
-    maximumLag=0.015
+def _computeOutcomeRates(
+    frameIndicesTrue,
+    frameIndicesPredicted,
+    saccadeLabelsTrue,
+    saccadeLabelsPredicted,
+    maximumLag,
+    fps,
     ):
     """
     """
 
-    framerate = round(1 / (np.median(np.loadtxt(interframeIntervals)) / 1000000000), 3)
-    frameIndicesTrue, saccadeLabelsTrue = loadManualSaccadeLabeling(manualLabeling)
-
-    # Extract frame indices and labels for predicted saccades
-    with h5py.File(modelPredictions, 'r') as stream:
-        frameIndicesPredicted = np.array(stream['saccade_onset']).ravel()
-        saccadeLabelsPredicted = np.array([s.item().decode() for s in stream['saccade_labels']])
-    
-    # Filter out NaS samples
-    saccadeIndices = np.where(np.logical_or(
-        saccadeLabelsPredicted == 'n',
-        saccadeLabelsPredicted == 't',
-    ))[0]
-    frameIndicesPredicted = frameIndicesPredicted[saccadeIndices]
-    saccadeLabelsPredicted = saccadeLabelsPredicted[saccadeIndices]
-
-    #
     result = {
-        'tpr': {
-            'n': None,
-            't': None,
-        },
-        'fpr': {
-            'n': None,
-            't': None,
-        }
+            'tpr': {
+                'n': None,
+                't': None,
+            },
+            'fpr': {
+                'n': None,
+                't': None,
+            }
     }
-    for saccadeLabel in ('n', 't'):
+    for saccadeLabel, saccadeLabelCoded in zip(['n', 't'], [1, -1]):
 
         # Compute the true positive rate
         matched = list()
         for saccadeIndex, t1 in enumerate(frameIndicesTrue):
 
-            #
-            if saccadeLabelsTrue[saccadeIndex] != saccadeLabel:
+            # Skip non-target samples
+            if saccadeLabelsTrue[saccadeIndex] != saccadeLabelCoded:
                 continue
 
             # Compute time lag
             dt = frameIndicesPredicted - t1
             closest = np.argmin(np.abs(dt))
             t2 = frameIndicesPredicted[closest]
-            lag = round(abs(((t1 - t2) / framerate)), 3)
+            lag = round(abs(((t1 - t2) / fps)), 3)
 
             #
-            if (lag <= maximumLag) and saccadeLabelsPredicted[closest] == saccadeLabel:
+            if (lag <= maximumLag) and saccadeLabelsPredicted[closest] == saccadeLabelCoded:
                 matched.append(True)
             else:
                 matched.append(False)
@@ -211,25 +202,198 @@ def quantifyPerformance(
 
         # Compute the false positive rate
         unmatched = list()
+        frameIndicesTrueExcludingNaS = np.copy(frameIndicesTrue)
+        frameIndicesTrueExcludingNaS = np.delete(
+            frameIndicesTrueExcludingNaS,
+            np.where(np.isnan(frameIndicesTrue))[0]
+        )
+        saccadeLabelsTrueExcludingNaS = np.copy(saccadeLabelsTrue)
+        saccadeLabelsTrueExcludingNaS = np.delete(
+            saccadeLabelsTrueExcludingNaS,
+            np.where(np.isnan(frameIndicesTrue))[0]
+        )
         for saccadeIndex, t1 in enumerate(frameIndicesPredicted):
 
-            #
-            if saccadeLabelsPredicted[saccadeIndex] != saccadeLabel:
+            # Skip non-target samples
+            if saccadeLabelsPredicted[saccadeIndex] != saccadeLabelCoded:
                 continue
 
-            #
-            dt = frameIndicesTrue - t1
+            # Find the closest true saccade that isn't an NaS
+            dt = frameIndicesTrueExcludingNaS - t1
             closest = np.argmin(np.abs(dt))
-            t2 = frameIndicesTrue[closest]
-            lag = round(abs(((t1 - t2) / framerate)), 3)
+            t2 = frameIndicesTrueExcludingNaS[closest]
+            lag = round(abs(((t1 - t2) / fps)), 3)
 
             #
-            if (lag <= maximumLag) and saccadeLabelsTrue[closest] == saccadeLabel:
+            if (lag <= maximumLag) and saccadeLabelsTrueExcludingNaS[closest] == saccadeLabelCoded:
                 unmatched.append(False)
             else:
                 unmatched.append(True)
+
         unmatched = np.array(unmatched)
         fpr = round(unmatched.sum() / unmatched.size, 3)
         result['fpr'][saccadeLabel] = fpr
 
     return result
+
+def _computeOutcomeRates2(
+    frameIndicesTrue,
+    frameIndicesPredicted,
+    saccadeLabelsTrue,
+    saccadeLabelsPredicted,
+    maximumLag,
+    fps,
+    ):
+    """
+    """
+
+    # Compute the true positive rate
+    matched = list()
+    for t1, l1 in zip(frameIndicesTrue, saccadeLabelsTrue):
+
+        # Compute time lag
+        dt = frameIndicesPredicted - t1
+        closest = np.argmin(np.abs(dt))
+        t2 = frameIndicesPredicted[closest]
+        lag = round(abs(((t1 - t2) / fps)), 3)
+
+        #
+        l2 = saccadeLabelsPredicted[closest]
+        if (lag <= maximumLag) and (l1 == l2):
+            matched.append(True) # True positive
+        else:
+            matched.append(False) # False negatie
+    matched = np.array(matched)
+    tpr = round(matched.sum() / matched.size, 3)
+
+    # Compute the false positive rate
+    unmatched = list()
+    for t1, l1 in zip(frameIndicesPredicted, saccadeLabelsPredicted):
+
+        # Find the closest true saccade that isn't an NaS
+        dt = frameIndicesTrue - t1
+        closest = np.argmin(np.abs(dt))
+        t2 = frameIndicesTrue[closest]
+        lag = round(abs(((t1 - t2) / fps)), 3)
+
+        #
+        l2 = saccadeLabelsTrue[closest]
+        if (lag <= maximumLag) and (l1 == l2):
+            unmatched.append(False) # True negative
+        else:
+            unmatched.append(True) # False positive
+
+    unmatched = np.array(unmatched)
+    fpr = round(unmatched.sum() / unmatched.size, 3)
+
+    return tpr, fpr
+
+def quantifyPerformance(
+    manualLabeling,
+    modelPredictions,
+    interframeIntervals,
+    maximumLag=0.005,
+    ):
+    """
+    """
+
+    #
+    fps = round(1 / (np.median(np.loadtxt(interframeIntervals)) / 1000000000), 3)
+
+    # Extract frame indices and labels for manually labeled saccades
+    with h5py.File(manualLabeling, 'r') as stream:
+        onsetLags = np.array(stream['saccade_onset']).ravel()
+        frameIndicesByWaveform = np.array(stream['frame_indices'])
+        frameIndicesTrue = list()
+        for saccadeIndex, i1 in enumerate(frameIndicesByWaveform):
+            i2 = np.interp(0.5, [0, 1], [i1.min(), i1.max()]).item()
+            i2 += round(onsetLags[saccadeIndex] * fps, 3)
+            frameIndicesTrue.append(i2)
+        frameIndicesTrue = np.array(frameIndicesTrue)
+        saccadeLabelsTrue = np.array(stream['saccade_labels'])
+        NaS = np.isnan(saccadeLabelsTrue)
+        frameIndicesTrue = np.delete(frameIndicesTrue, np.where(NaS)[0])
+        saccadeLabelsTrue = np.delete(saccadeLabelsTrue, np.where(NaS)[0])
+
+
+    # Extract frame indices and labels for predicted saccades
+    with h5py.File(modelPredictions, 'r') as stream:
+        frameIndicesPredicted = np.array(stream['saccade_onset']).ravel()
+        saccadeLabelsPredicted = np.array(stream['saccade_labels_coded'])
+
+    #
+    result = _computeOutcomeRates(
+        frameIndicesTrue,
+        frameIndicesPredicted,
+        saccadeLabelsTrue,
+        saccadeLabelsPredicted,
+        maximumLag,
+        fps
+    )
+
+    return result
+
+def computeReceiverOperatingCurves(
+    poseEstimates,
+    manualLabeling,
+    maximumLag=0.1,
+    fps=30,
+    ):
+    """
+    """
+
+    # Compute projections
+    pose, proj, uh, uv = computePoseProjections(
+        poseEstimates
+    )
+    signal = np.diff(proj[:, 0])
+
+    # Load manual labeling
+    saccadeOnsetsTrue, saccadeLabelsDecoded = loadManualSaccadeLabeling(
+        manualLabeling
+    )
+    saccadeLabelsTrue = list()
+    for saccadeLabel in saccadeLabelsDecoded:
+        if saccadeLabel == 'n':
+            saccadeLabelsTrue.append(1)
+        elif saccadeLabel == 't':
+            saccadeLabelsTrue.append(-1)
+        else:
+            saccadeLabelsTrue.append(0)
+    saccadeLabelsTrue = np.array(saccadeLabelsTrue)
+
+    # Compute predicted saccade onsets and labels
+    xy = list()
+    thresholds = np.linspace(
+        np.nanpercentile(np.abs(signal), 50),
+        np.nanmax(np.abs(signal)),
+        100
+    )
+    for threshold in thresholds:
+        peakIndices, peakProps = find_peaks(
+            np.abs(signal),
+            height=0,
+            distance=0.07 * fps
+        )
+        saccadeOnsetsPredicted = peakIndices
+        saccadeLabelsPredicted = list()
+        for peakIndex in peakIndices:
+            if abs(signal[peakIndex]) < threshold:
+                saccadeLabel = 0
+            elif signal[peakIndex] < 0:
+                saccadeLabel = 1
+            else:
+                saccadeLabel = -1
+            saccadeLabelsPredicted.append(saccadeLabel)
+        saccadeLabelsPredicted = np.array(saccadeLabelsPredicted)
+        tpr, fpr = _computeOutcomeRates2(
+            saccadeOnsetsTrue,
+            saccadeOnsetsPredicted,
+            saccadeLabelsTrue,
+            saccadeLabelsPredicted,
+            maximumLag,
+            fps=fps
+        )
+        xy.append([tpr, fpr])
+
+    return np.array(xy)
