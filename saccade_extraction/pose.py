@@ -5,7 +5,7 @@ from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
 from decimal import Decimal
 
-def loadPoseEstimates(
+def _loadPoseEstimates(
     file
     ):
     """
@@ -34,9 +34,18 @@ def loadPoseEstimates(
         orient='row',
     )
 
+    frame = dict()
+    for pt in ('N', 'L', 'T', 'U'):
+        frame[pt] = np.array(pose.select(f'{pt}_x', f'{pt}_y')).mean(0)
+    P = np.array(pose.select('P_x', 'P_y'))
+
+    # Mask uncertain estimates
+    likelihood = np.array(pose['P_likelihood'])
+    P[likelihood < likelihoodThreshold, :] = (np.nan, np.nan)
+
     return df
 
-def projectPoseEstimates(
+def _computeProjections(
     frame,
     points,
     normalize=False # TODO: Make normalization optional
@@ -88,27 +97,88 @@ def projectPoseEstimates(
 
     return magnitude, uHorizontal, uVertical
 
-def computePoseProjections(
-    dlcFile,
-    likelihoodThreshold=0.95
+def _processProjections(
+    projections,
+    interframeIntervals,
+    maximumGapSize=0.01,
+    smoothingWindowSize=0.003,
     ):
     """
     """
 
-    # Load data
-    pose = loadPoseEstimates(dlcFile)
+    # Correct for dropped frames
+    ifi = np.loadtxt(interframeIntervals)[1:]
+    factor = 1 / np.median(ifi)
+    indices = list()
+    for i, frameInterval in enumerate(ifi):
+        n = round(frameInterval / factor)
+        if (n - 1) > 0:
+            for j in range(n - 1):
+                indices.append(i)
 
     #
+    corrected = np.insert(
+        projections,
+        indices,
+        np.array([np.nan, np.nan]),
+        axis=0
+    )
+
+    # Interpolate over gaps
+    fps = 1 / np.median(ifi) / 1000000000
+    interpolated = np.copy(corrected)
+    for i in range(corrected.shape[1]):
+        gapIndices = np.where(np.diff(np.isnan(corrected[:, i])))[0].reshape(-1, 2) + 1
+        for startIndex, stopIndex in gapIndices:
+            gapsize = (stopIndex - startIndex) / fps
+            if gapsize > maximumGapSize:
+                continue
+            interpolated[startIndex - 1: stopIndex + 1, i] = np.interp(
+                np.arange(gapsize + 2),
+                np.arange(gapsize + 2),
+                corrected[startIndex - 1: stopIndex + 1, i],
+            )
+
+    # Smooth signal
+    sigma = round(fps * smoothingWindowSize, 2)
+    smoothed = np.copy(interpolated)
+    smoothed[:, 0] = gaussian_filter1d(interpolated[:, 0], sigma=sigma)
+    smoothed[:, 1] = gaussian_filter1d(interpolated[:, 1], sigma=sigma)
+
+    return smoothed
+
+def computeEyePosition(
+    poseEstimates,
+    interframeIntervals,
+    likelihoodThreshold=0.97,
+    maximumGapsize=0.01,
+    ):
+    """
+    """
+
+    # Load pose estimates
+    pose = _loadPoseEstimates(poseEstimates)
     frame = dict()
     for pt in ('N', 'L', 'T', 'U'):
         frame[pt] = np.array(pose.select(f'{pt}_x', f'{pt}_y')).mean(0)
     P = np.array(pose.select('P_x', 'P_y'))
+
+    # Mask uncertain estimates
     likelihood = np.array(pose['P_likelihood'])
     P[likelihood < likelihoodThreshold, :] = (np.nan, np.nan)
-    projections, uHorizontal, uVertical = projectPoseEstimates(frame, P)
+    projections, uHorizontal, uVertical = _computeProjections(
+        frame,
+        P
+    )
 
+    # Process signal
+    processed = _processProjections(
+        projections,
+        interframeIntervals,
+        maximumGapsize
+    )
 
-    return pose, projections, uHorizontal, uVertical
+    return processed, pose.shape[0]
 
 def extractPutativeSaccades(
     configFile,
@@ -125,9 +195,12 @@ def extractPutativeSaccades(
     with open(configFile, 'r') as stream:
         configData = yaml.safe_load(stream)
 
-    # Load pose and projections onto N-T and U-L axes
-    pose, projections, uHorizontal, uVertical = computePoseProjections(poseEstimates, likelihoodThreshold)
-    nFrames = pose.shape[0]
+    #
+    projections, nFrames = computeEyePosition(
+        poseEstimates,
+        interframeIntervals,
+        likelihoodThreshold,
+    )
 
     # Check how much of the eye position data is NaN values
     frameLoss = np.isnan(projections[:, 0]).sum() / projections.shape[0]

@@ -397,3 +397,113 @@ def computeReceiverOperatingCurves(
         xy.append([tpr, fpr])
 
     return np.array(xy)
+
+class SimpleThresholdingClassifier():
+    """
+    """
+
+    def __init__(self, threshold):
+        self.threshold = threshold
+        return 
+    
+    
+    def fit(self):
+        return
+    
+    def predict(self, X):
+        labels = list()
+        for x in X:
+            iMiddle = np.interp(0.5, [0, 1], [0, x.size]).item()
+            yMiddle = round(np.interp(iMiddle, np.arange(x.size), x).item(), 3)
+            if abs(yMiddle) < self.threshold:
+                labels.append(0)
+            elif yMiddle < 0:
+                labels.append(1)
+            elif yMiddle > 0:
+                labels.append(-1)
+            else:
+                raise Exception()
+        return np.array(labels)
+
+from sklearn.metrics import confusion_matrix  
+def computeReceiverOperatingCharacteristic(
+    manualLabeling,
+    ):
+    """
+    """
+
+    with h5py.File(manualLabeling, 'r') as stream:
+        saccadeWaveforms = np.array(stream['saccade_waveforms'])
+        saccadeLabels = np.array(stream['saccade_labels'])
+    
+    #
+    X = np.diff(saccadeWaveforms[:, 0, :], axis=1)
+    yTrue = saccadeLabels
+
+    #
+    thresholds = np.linspace(
+        np.percentile(np.abs(X.ravel()), 50),
+        np.abs(X.ravel()).max(),
+        100
+    )
+    xy = list()
+    for threshold in thresholds:
+        clf = SimpleThresholdingClassifier(threshold=threshold)
+        yPred = clf.predict(X)
+        cm = confusion_matrix(yTrue, yPred)
+
+        # Compute per-class FPR and TPR
+        num_classes = cm.shape[0]
+        fpr_per_class = []
+        tpr_per_class = []
+
+        for i in range(num_classes):
+
+            # Compute FPR
+            FP = np.sum(cm[:, i]) - cm[i, i]  # False Positives for class i
+            TN = np.sum(cm) - (np.sum(cm[i, :]) + np.sum(cm[:, i]) - cm[i, i])  # True Negatives for class i
+            fpr = FP / (FP + TN) if (FP + TN) > 0 else 0
+            fpr_per_class.append(fpr)
+
+            # Compute TPR
+            TP = cm[i, i]  # True Positives for class i
+            FN = np.sum(cm[i, :]) - TP  # False Negatives for class i
+            tpr = TP / (TP + FN) if (TP + FN) > 0 else 0
+            tpr_per_class.append(tpr)
+
+        #
+        # fpr_macro = np.mean(fpr_per_class)
+        # tpr_macro = np.mean(tpr_per_class)
+        xy.append([fpr_per_class, tpr_per_class])
+    xy = np.array(xy)
+
+    fig, axs = plt.subplots(nrows=2, ncols=3, sharey=True)
+    for i in range(3):
+        axs[0, i].plot(thresholds, xy[:, 1, i])
+        axs[0, i].plot(thresholds, xy[:, 0, i])
+        axs[1, i].plot(xy[:, 0, i], xy[:, 1, i])
+
+    #
+    optimums = list()
+    for i in range(3):
+        tpr = xy[:, 1, i]
+        fpr = xy[:, 0, i]
+        dists = np.sqrt((1 - tpr) ** 2 + fpr ** 2)
+        index = np.argmin(dists)
+        x = xy[index, 0, i]
+        y = xy[index, 1, i]
+        axs[1, i].scatter(x, y, color='r')
+        optimums.append(thresholds[index])
+    optimum = np.mean(optimums)
+    for ax in axs[0, :]:
+        ylim = ax.get_ylim()
+        ax.vlines(optimum, *ylim, color='r')
+        ax.set_ylim(ylim)
+
+    #
+    for i in range(3):
+        tpr = np.interp(optimum, thresholds, xy[:, 1, i]).item()
+        fpr = np.interp(optimum, thresholds, xy[:, 0, i]).item()
+        print(f'Result for class {i + 1}: FPR={fpr:.2f}, TPR={tpr:.2f}')
+
+    return fig, axs, optimum
