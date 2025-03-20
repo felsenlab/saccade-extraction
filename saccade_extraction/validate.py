@@ -1,4 +1,4 @@
-from saccade_extraction.pose import loadPoseEstimates, computePoseProjections
+from saccade_extraction.pose import _loadPoseEstimates, _computeProjections
 from matplotlib import pylab as plt
 import numpy as np
 import h5py
