@@ -6,7 +6,9 @@ from scipy.ndimage import gaussian_filter1d
 from decimal import Decimal
 
 def _loadPoseEstimates(
-    file
+    file,
+    likelihoodThreshold=0.97,
+    maximumDataLoss=0.1,
     ):
     """
     """
@@ -34,20 +36,21 @@ def _loadPoseEstimates(
         orient='row',
     )
 
-    frame = dict()
-    for pt in ('N', 'L', 'T', 'U'):
-        frame[pt] = np.array(pose.select(f'{pt}_x', f'{pt}_y')).mean(0)
-    P = np.array(pose.select('P_x', 'P_y'))
+    pose = dict()
+    for pt in ('N', 'L', 'T', 'U', 'P'):
+        pose[pt] = np.array(df.select(f'{pt}_x', f'{pt}_y'))
+        l = np.array(df.select(f'{pt}_likelihood')).ravel()
+        pose[pt][l < likelihoodThreshold, :] = np.array([np.nan, np.nan])
 
-    # Mask uncertain estimates
-    likelihood = np.array(pose['P_likelihood'])
-    P[likelihood < likelihoodThreshold, :] = (np.nan, np.nan)
+    #
+    loss = np.isnan(pose['P']).all(1).sum() / pose['P'].shape[0]
+    if loss > maximumDataLoss:
+        raise Exception(f'Data loss due to uncertainty in pose estimation ({loss * 100:.1f}%) exceeds threshold of {maximumDataLoss * 100:.1f}')
 
-    return df
+    return pose
 
 def _computeProjections(
-    frame,
-    points,
+    pose,
     normalize=False # TODO: Make normalization optional
     ):
     """
@@ -59,19 +62,18 @@ def _computeProjections(
     values mean temporal/lower (relative to the centroid)
     """
 
-    # Unpack the dictionary
-    nasal = frame['N']
-    temporal = frame['T']
-    lower = frame['L']
-    upper = frame['U']
+    nasal = np.nanmean(pose['N'], axis=0)
+    temporal = np.nanmean(pose['T'], axis=0)
+    lower = np.nanmean(pose['L'], axis=0)
+    upper = np.nanmean(pose['U'], axis=0)
 
     # Vectors for the axes
     nt = np.array([temporal[0] - nasal[0], temporal[1] - nasal[1]])
     ul = np.array([lower[0] - upper[0], lower[1] - upper[1]])
 
     # Points to project
-    x = points[:, 0]
-    y = points[:, 1]
+    x = pose['P'][:, 0]
+    y = pose['P'][:, 1]
 
     # Projection onto the nasal-temporal axis
     magnitude = list()
@@ -95,7 +97,54 @@ def _computeProjections(
     magnitude[:, 0] -= np.nanmean(magnitude[:, 0])
     magnitude[:, 1] -= np.nanmean(magnitude[:, 1])
 
-    return magnitude, uHorizontal, uVertical
+    return magnitude
+
+def _identifyDroppedFrames(
+    projections,
+    interframeIntervals
+    ):
+    """
+    """
+
+    # Quality check
+    ifi = np.loadtxt(interframeIntervals)[1:]
+    n = projections.shape[0]
+    if ifi.size + 1 != n:
+        raise Exception('Different number of frames and timestamps')
+
+    #
+    factor = np.median(ifi)
+    arrayIndices = list()
+    frameTimestamps = np.concatenate([
+        [0,],
+        np.cumsum(ifi)
+    ])
+    for i, frameInterval in enumerate(ifi):
+        n = round(frameInterval / factor)
+        if (n - 1) > 0:
+            for j in range(n - 1):
+                arrayIndices.append(i)
+    arrayIndices = np.array(arrayIndices)
+    corrected = np.insert(
+        projections,
+        arrayIndices,
+        np.array([np.nan, np.nan]),
+        axis=0
+    )
+    frameTimestamps = np.insert(
+        frameTimestamps,
+        arrayIndices + 1,
+        np.nan
+    )
+    isnan = np.isnan(frameTimestamps)
+    frameTimestamps[isnan] = np.interp(
+        np.where(isnan)[0],
+        np.arange(frameTimestamps.size)[np.logical_not(isnan)],
+        frameTimestamps[np.logical_not(isnan)],
+    )
+    frameTimestamps = np.around(frameTimestamps / 1000000000, 6)
+
+    return corrected, frameTimestamps
 
 def _processProjections(
     projections,
@@ -106,87 +155,77 @@ def _processProjections(
     """
     """
 
-    # Correct for dropped frames
+    # Interpolate over missing data
     ifi = np.loadtxt(interframeIntervals)[1:]
-    factor = 1 / np.median(ifi)
-    indices = list()
-    for i, frameInterval in enumerate(ifi):
-        n = round(frameInterval / factor)
-        if (n - 1) > 0:
-            for j in range(n - 1):
-                indices.append(i)
-
-    #
-    corrected = np.insert(
-        projections,
-        indices,
-        np.array([np.nan, np.nan]),
-        axis=0
-    )
-
-    # Interpolate over gaps
-    fps = 1 / np.median(ifi) / 1000000000
-    interpolated = np.copy(corrected)
-    for i in range(corrected.shape[1]):
-        gapIndices = np.where(np.diff(np.isnan(corrected[:, i])))[0].reshape(-1, 2) + 1
-        for startIndex, stopIndex in gapIndices:
-            gapsize = (stopIndex - startIndex) / fps
-            if gapsize > maximumGapSize:
+    fps = 1 / (np.median(ifi) / 1000000000)
+    interpolated = np.copy(projections)
+    for j in range(projections.shape[1]):
+        indices = list()
+        startIndices = np.where(np.diff(np.isnan(projections[:, j])))[0][::2] + 1
+        for startIndex in startIndices:
+            stopIndex = None
+            for i in range(startIndex, projections.shape[0]):
+                if np.isnan(projections[i, j]).item() == True:
+                    continue
+                stopIndex = j
+                break
+            if stopIndex is None:
                 continue
-            interpolated[startIndex - 1: stopIndex + 1, i] = np.interp(
-                np.arange(gapsize + 2),
-                np.arange(gapsize + 2),
-                corrected[startIndex - 1: stopIndex + 1, i],
-            )
+            dt = (stopIndex - startIndex) / fps
+            if dt < maximumGapSize:
+                for i in range(startIndex, stopIndex + 1, 1):
+                    indices.append(i)
+        if len(indices) == 0:
+            continue
+        interpolated = np.interp(
+            np.arange(projections.shape[0]),
+            indices,
+            projections[:, j]
+        )
 
     # Smooth signal
     sigma = round(fps * smoothingWindowSize, 2)
-    smoothed = np.copy(interpolated)
-    smoothed[:, 0] = gaussian_filter1d(interpolated[:, 0], sigma=sigma)
-    smoothed[:, 1] = gaussian_filter1d(interpolated[:, 1], sigma=sigma)
+    smoothed = gaussian_filter1d(interpolated, sigma=sigma, axis=0)
 
     return smoothed
 
-def computeEyePosition(
+def loadEyePosition(
     poseEstimates,
     interframeIntervals,
     likelihoodThreshold=0.97,
-    maximumGapsize=0.01,
+    maximumGapSize=0.01,
+    smoothingWindowSize=0.003,
+    maximumDataLoss=0.1,
     ):
     """
     """
 
-    # Load pose estimates
-    pose = _loadPoseEstimates(poseEstimates)
-    frame = dict()
-    for pt in ('N', 'L', 'T', 'U'):
-        frame[pt] = np.array(pose.select(f'{pt}_x', f'{pt}_y')).mean(0)
-    P = np.array(pose.select('P_x', 'P_y'))
-
-    # Mask uncertain estimates
-    likelihood = np.array(pose['P_likelihood'])
-    P[likelihood < likelihoodThreshold, :] = (np.nan, np.nan)
-    projections, uHorizontal, uVertical = _computeProjections(
-        frame,
-        P
+    pose = _loadPoseEstimates(
+        poseEstimates,
+        likelihoodThreshold,
+        maximumDataLoss
     )
-
-    # Process signal
-    processed = _processProjections(
+    projections = _computeProjections(pose)
+    corrected, frameTimestamps = _identifyDroppedFrames(
         projections,
+        interframeIntervals
+    )
+    processed = _processProjections(
+        corrected,
         interframeIntervals,
-        maximumGapsize
+        maximumGapSize,
+        smoothingWindowSize
     )
 
-    return processed, pose.shape[0]
+    return processed, frameTimestamps
 
 def extractPutativeSaccades(
     configFile,
     poseEstimates,
     interframeIntervals,
     likelihoodThreshold=0.95,
-    maximumFrameLoss=0.15,
-    maximumFrameDifference=0.01,
+    maximumGapSize=0.01,
+    maximumDataLoss=0.1,
     ):
     """
     """
@@ -196,39 +235,20 @@ def extractPutativeSaccades(
         configData = yaml.safe_load(stream)
 
     #
-    projections, nFrames = computeEyePosition(
+    eyePosition, frameTimestamps = loadEyePosition(
         poseEstimates,
         interframeIntervals,
         likelihoodThreshold,
+        maximumGapSize,
+        configData['smoothingWindowSize'],
+        maximumDataLoss
     )
-
-    # Check how much of the eye position data is NaN values
-    frameLoss = np.isnan(projections[:, 0]).sum() / projections.shape[0]
-    if frameLoss > maximumFrameLoss:
-        raise Exception(f'{frameLoss * 100:.2f}% of pose estimates are NaN values (more than threshold of {maximumFrameLoss * 100:.0f}%)')
-
-    # Compute the empirical framerate
-    ifi = np.loadtxt(interframeIntervals)[1:] / 1000000000 # Drop the first interval
-    fps = 1 / np.median(ifi)
-    diff = ifi.size + 1 - nFrames # Difference in the number of frames
-    if diff != 0:
-        print(f'WARNING: The number of frames ({nFrames}) is different than the number of timestamps ({ifi.size + 1})')
-        if diff / nFrames > maximumFrameDifference:
-            raise Exception(f'Difference in frame count ({diff / nFrames:.2f}) is exceeds threshold ({maximumFrameDifference:.2f})')
-        else:
-            print(f'WARNING: Assuming a constant framerate of {fps:.2f} fps')
-            ifi = np.full(nFrames - 1, np.median(ifi))
-
-    #
-    tFrames = np.concatenate([[0,], np.cumsum(ifi)])
-
-    # Smooth signal
-    sigma = round(fps * configData['smoothingWindowSize'], 2)
-    horizontalEyePosition = gaussian_filter1d(projections[:, 0], sigma=sigma)
+    horizontalEyePosition = eyePosition[:, 0]
+    verticalEyePosition = eyePosition[:, 1]
     horizontalEyeVelocity = np.diff(horizontalEyePosition)
-    verticalEyePosition = gaussian_filter1d(projections[:, 1], sigma=sigma)
 
     # Detect peaks
+    fps = 1 / (np.median(np.loadtxt(interframeIntervals)) / 1000000000)
     heightThreshold = np.nanpercentile(horizontalEyeVelocity, configData['velocityThreshold'])
     distanceThreshold = np.ceil(configData['minimumPeakDistance'] * fps)
     peakIndices, peakProps = find_peaks(
@@ -238,16 +258,15 @@ def extractPutativeSaccades(
     )
 
     #
-    saccadeLoss = 0
-    frameIndices = list()
-    frameTimestamps = list()
+    # saccadeLoss = 0
+    evaluationIndices = list()
+    evaluationTimestamps = list()
     saccadeWaveforms = list()
-
     for peakIndex in peakIndices:
         
 
         #
-        tPeak = (tFrames[peakIndex] + tFrames[peakIndex + 1]) / 2
+        tPeak = np.mean([frameTimestamps[peakIndex], frameTimestamps[peakIndex + 1]])
         tLeft = float(Decimal(str(tPeak)) + Decimal(str(configData['responseWindow'][0])))
         tRight = float(Decimal(str(tPeak)) + Decimal(str(configData['responseWindow'][1])))
         tEval = np.linspace(tLeft, tRight, configData['waveformSize'] + 1)
@@ -255,30 +274,30 @@ def extractPutativeSaccades(
         #
         iEval = np.around(np.interp(
             tEval,
-            tFrames,
-            np.arange(tFrames.size)
+            frameTimestamps,
+            np.arange(frameTimestamps.size)
         ), 3)
 
         #
         wf = np.array([
-            np.interp(tEval, tFrames, horizontalEyePosition),
-            np.interp(tEval, tFrames, verticalEyePosition)
+            np.interp(tEval, frameTimestamps, horizontalEyePosition),
+            np.interp(tEval, frameTimestamps, verticalEyePosition)
         ])
 
         #
         if np.isnan(wf).sum() > 0:
-            saccadeLoss += 1
+            # saccadeLoss += 1
             continue
 
         #
         saccadeWaveforms.append(wf)
-        frameTimestamps.append(tEval)
-        frameIndices.append(iEval)
+        evaluationTimestamps.append(tEval)
+        evaluationIndices.append(iEval)
 
     #
-    frameIndices = np.around(np.array(frameIndices), 3)
-    frameTimestamps = np.around(np.array(frameTimestamps), 3)
+    evaluationIndices = np.around(np.array(evaluationIndices), 3)
+    evaluationTimestamps = np.around(np.array(evaluationTimestamps), 3)
     saccadeWaveforms = np.around(np.array(saccadeWaveforms), 3)
-    print(f'INFO: {saccadeLoss} out of {peakIndices.size} putative saccades lost due to uncertainty in pose estimation')
+    # print(f'INFO: {saccadeLoss} out of {peakIndices.size} putative saccades lost due to uncertainty in pose estimation')
 
-    return saccadeWaveforms, frameIndices, frameTimestamps
+    return saccadeWaveforms, evaluationIndices, evaluationTimestamps
