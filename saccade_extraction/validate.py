@@ -4,6 +4,7 @@ import h5py
 import pathlib as pl
 import shutil
 from sklearn.metrics import confusion_matrix 
+import pickle
 
 def loadManualSaccadeLabeling(manualLabeling):
     """
@@ -264,7 +265,7 @@ def computeRocCurves(
 
     return fig, axs, opt
 
-def quantifyPerformanceMulticlass(
+def quantifyPerformance(
     manualLabeling,
     clf,
     ):
@@ -274,6 +275,11 @@ def quantifyPerformanceMulticlass(
     with h5py.File(manualLabeling, 'r') as stream:
         saccadeWaveforms = np.array(stream['saccade_waveforms'])
         saccadeLabels = np.array(stream['saccade_labels'])
+
+    #
+    if type(clf) == str:
+        with open(clf, 'rb') as stream:
+            clf = pickle.load(clf)
     
     #
     X = np.diff(saccadeWaveforms[:, 0, :], axis=1)
