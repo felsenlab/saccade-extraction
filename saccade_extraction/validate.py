@@ -426,7 +426,7 @@ class SimpleThresholdingClassifier():
         return np.array(labels)
 
 from sklearn.metrics import confusion_matrix  
-def computeReceiverOperatingCharacteristic(
+def computeRocCurve(
     manualLabeling,
     ):
     """
@@ -507,3 +507,41 @@ def computeReceiverOperatingCharacteristic(
         print(f'Result for class {i + 1}: FPR={fpr:.2f}, TPR={tpr:.2f}')
 
     return fig, axs, optimum
+
+def quantifyPerformanceMulticlass(
+    manualLabeling,
+    clf,
+    ):
+    """
+    """
+
+    with h5py.File(manualLabeling, 'r') as stream:
+        saccadeWaveforms = np.array(stream['saccade_waveforms'])
+        saccadeLabels = np.array(stream['saccade_labels'])
+    
+    #
+    X = np.diff(saccadeWaveforms[:, 0, :], axis=1)
+    yTrue = saccadeLabels
+    yPred = clf.predict(X)
+    cm = confusion_matrix(yTrue, yPred)
+
+    # Compute per-class FPR and TPR
+    num_classes = cm.shape[0]
+    fpr_per_class = []
+    tpr_per_class = []
+
+    for i in range(num_classes):
+
+        # Compute FPR
+        FP = np.sum(cm[:, i]) - cm[i, i]  # False Positives for class i
+        TN = np.sum(cm) - (np.sum(cm[i, :]) + np.sum(cm[:, i]) - cm[i, i])  # True Negatives for class i
+        fpr = FP / (FP + TN) if (FP + TN) > 0 else 0
+        fpr_per_class.append(fpr)
+
+        # Compute TPR
+        TP = cm[i, i]  # True Positives for class i
+        FN = np.sum(cm[i, :]) - TP  # False Negatives for class i
+        tpr = TP / (TP + FN) if (TP + FN) > 0 else 0
+        tpr_per_class.append(tpr)
+
+    return np.array(fpr_per_class), np.array(tpr_per_class)
