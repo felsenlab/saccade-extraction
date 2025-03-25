@@ -53,32 +53,30 @@ def initializeProject(
     return configFile
 
 def collectFileSets(
-    root
+    homeFolder
     ):
     """
     Explore subdirectories under root looking for folders that contain pose
     estimates and interframe intervals
     """
 
-    if type(root) != pl.Path:
-        root = pl.Path(root)
-
+    if type(homeFolder) != pl.Path:
+        homeFolder = pl.Path(homeFolder)
+    poseEstimates = list(homeFolder.rglob('*DLC*.csv'))
     fileSets = list()
-    for folder in root.rglob('*'):
-        if folder.is_dir() == False:
-            continue
+    for poseEstimate in poseEstimates:
         fileSet = list()
-        for file in folder.iterdir():
-            if file.suffix == '.csv' and 'DLC' in file.name:
-                fileSet.append(file)
-                break
-        for file in folder.iterdir():
-            if file.suffix == '.txt' and 'timestamps' in file.name:
-                fileSet.append(file)
-                break
-        if len(fileSet) != 2:
-            continue
-        fileSets.append(tuple(fileSet))
+        fileSet.append(poseEstimate)
+        stem = poseEstimate.name.split('DLC')[0].rstrip('-0000')
+        result = list(homeFolder.rglob(f'*{stem}*timestamps.txt'))
+        if len(result) == 1:
+            interframeIntervals = result.pop()
+            fileSet.append(interframeIntervals)
+        fileSet = tuple(fileSet)
+        if len(fileSet) == 2:
+            fileSets.append(fileSet)
+        else:
+            pass
 
     return fileSets
 
