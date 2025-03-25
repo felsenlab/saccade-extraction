@@ -125,17 +125,20 @@ def _identifyDroppedFrames(
             for j in range(n - 1):
                 arrayIndices.append(i)
     arrayIndices = np.array(arrayIndices)
-    corrected = np.insert(
-        projections,
-        arrayIndices,
-        np.array([np.nan, np.nan]),
-        axis=0
-    )
-    frameTimestamps = np.insert(
-        frameTimestamps,
-        arrayIndices + 1,
-        np.nan
-    )
+    if len(arrayIndices) != 0:
+        corrected = np.insert(
+            projections,
+            arrayIndices,
+            np.array([np.nan, np.nan]),
+            axis=0
+        )
+        frameTimestamps = np.insert(
+            frameTimestamps,
+            arrayIndices + 1,
+            np.nan
+        )
+    else:
+        corrected = projections
     isnan = np.isnan(frameTimestamps)
     frameTimestamps[isnan] = np.interp(
         np.where(isnan)[0],
