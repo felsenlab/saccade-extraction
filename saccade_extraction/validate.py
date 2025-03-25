@@ -5,6 +5,7 @@ import pathlib as pl
 import shutil
 from sklearn.metrics import confusion_matrix 
 import pickle
+from saccade_extraction.pose import loadEyePosition
 
 def loadManualSaccadeLabeling(manualLabeling):
     """
@@ -52,6 +53,7 @@ def loadManualSaccadeLabeling(manualLabeling):
 
 def visualizePredictions(
     poseEstimates,
+    interframeIntervals,
     saccadePredictions,
     manualLabeling=None,
     likelihoodThreshold=0.95,
@@ -61,14 +63,15 @@ def visualizePredictions(
     """
     """
 
-    pose, projections, uHorizontal, uVertical = computePoseProjections(
+    eyePosition, frameTimestamps = loadEyePosition(
         poseEstimates,
-        likelihoodThreshold
+        interframeIntervals,
+        likelihoodThreshold,
     )
 
     fig, ax = plt.subplots()
-    t = np.arange(pose.shape[0])
-    ax.plot(t, projections[:, 0], color='k')
+    t = np.arange(eyePosition.shape[0])
+    ax.plot(t, eyePosition[:, 0], color='k')
     ylim = ax.get_ylim()
     
     #
@@ -181,8 +184,10 @@ class SimpleThresholdingClassifier():
                 raise Exception()
         return np.array(labels)
  
-def computeRocCurves(
+def plotRocCurvesForThresholding(
     manualLabeling,
+    fprByClass_=None,
+    tprByClass_=None,
     ):
     """
     """
@@ -232,11 +237,24 @@ def computeRocCurves(
     xy = np.array(xy)
 
     #
-    fig, axs = plt.subplots(nrows=2, ncols=3, sharey=True)
+    fig, axs = plt.subplots(nrows=3, ncols=3, sharey=True)
     for i in range(3):
         axs[0, i].plot(thresholds, xy[:, 1, i])
         axs[0, i].plot(thresholds, xy[:, 0, i])
-        axs[1, i].plot(xy[:, 0, i], xy[:, 1, i])
+        for j in (1, 2):
+            axs[j, i].plot(xy[:, 0, i], xy[:, 1, i])
+
+    #
+    for i in range(3):
+        for j in (1, 2):
+            if tprByClass_ is not None:
+                xlim = axs[j, i].get_xlim()
+                axs[1, i].hlines(tprByClass_[i], *xlim, color='k', linestyle=':')
+                axs[1, i].set_xlim(xlim)
+            if fprByClass_ is not None:
+                ylim = axs[1, i].get_ylim()
+                axs[1, i].vlines(fprByClass_[i], *ylim, color='k', linestyle=':')
+                axs[1, i].set_ylim(ylim)
 
     #
     opts = list()
@@ -247,9 +265,9 @@ def computeRocCurves(
         index = np.argmin(dists)
         x = xy[index, 0, i]
         y = xy[index, 1, i]
-        axs[1, i].scatter(x, y, color='r')
+        axs[1, i].scatter(x, y, color='k')
         opts.append(thresholds[index])
-    opt = np.mean(opt)
+    opt = np.mean(opts)
 
     #
     for ax in axs[0, :]:
