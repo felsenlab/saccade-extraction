@@ -226,7 +226,6 @@ def extractPutativeSaccades(
     configFile,
     poseEstimates,
     interframeIntervals,
-    likelihoodThreshold=0.8,
     maximumGapSize=0.01,
     maximumDataLoss=0.1,
     ):
@@ -241,7 +240,7 @@ def extractPutativeSaccades(
     eyePosition, frameTimestamps = loadEyePosition(
         poseEstimates,
         interframeIntervals,
-        likelihoodThreshold,
+        configData['likelihoodThreshold'],
         maximumGapSize,
         configData['smoothingWindowSize'],
         maximumDataLoss
