@@ -43,7 +43,7 @@ def _loadPoseEstimates(
         pose[pt][l < likelihoodThreshold, :] = np.array([np.nan, np.nan])
 
     #
-    loss = np.isnan(pose['P']).all(1).sum() / pose['P'].shape[0]
+    loss = np.isnan(pose['pupil_center']).all(1).sum() / pose['pupil_center'].shape[0]
     if loss > maximumDataLoss:
         raise Exception(f'Data loss due to uncertainty in pose estimation ({loss * 100:.1f}%) exceeds threshold of {maximumDataLoss * 100:.1f}')
 
