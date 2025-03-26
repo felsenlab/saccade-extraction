@@ -37,7 +37,7 @@ def _loadPoseEstimates(
     )
 
     pose = dict()
-    for pt in ('N', 'L', 'T', 'U', 'P'):
+    for pt in ('eye_nasal', 'eye_ventral', 'eye_temporal', 'eye_dorsal', 'pupil_center'):
         pose[pt] = np.array(df.select(f'{pt}_x', f'{pt}_y'))
         l = np.array(df.select(f'{pt}_likelihood')).ravel()
         pose[pt][l < likelihoodThreshold, :] = np.array([np.nan, np.nan])
@@ -62,18 +62,18 @@ def _computeProjections(
     values mean temporal/lower (relative to the centroid)
     """
 
-    nasal = np.nanmean(pose['N'], axis=0)
-    temporal = np.nanmean(pose['T'], axis=0)
-    lower = np.nanmean(pose['L'], axis=0)
-    upper = np.nanmean(pose['U'], axis=0)
+    nasal = np.nanmean(pose['eye_nasal'], axis=0)
+    temporal = np.nanmean(pose['eye_temporal'], axis=0)
+    lower = np.nanmean(pose['eye_ventral'], axis=0)
+    upper = np.nanmean(pose['eye_dorsal'], axis=0)
 
     # Vectors for the axes
     nt = np.array([temporal[0] - nasal[0], temporal[1] - nasal[1]])
     ul = np.array([lower[0] - upper[0], lower[1] - upper[1]])
 
     # Points to project
-    x = pose['P'][:, 0]
-    y = pose['P'][:, 1]
+    x = pose['pupil_center'][:, 0]
+    y = pose['pupil_center'][:, 1]
 
     # Projection onto the nasal-temporal axis
     magnitude = list()
