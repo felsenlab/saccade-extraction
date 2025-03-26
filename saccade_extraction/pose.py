@@ -7,7 +7,7 @@ from decimal import Decimal
 
 def _loadPoseEstimates(
     file,
-    likelihoodThreshold=0.97,
+    likelihoodThreshold=0.8,
     maximumDataLoss=0.1,
     ):
     """
@@ -195,7 +195,7 @@ def _processProjections(
 def loadEyePosition(
     poseEstimates,
     interframeIntervals,
-    likelihoodThreshold=0.97,
+    likelihoodThreshold=0.8,
     maximumGapSize=0.01,
     smoothingWindowSize=0.003,
     maximumDataLoss=0.1,
@@ -226,7 +226,7 @@ def extractPutativeSaccades(
     configFile,
     poseEstimates,
     interframeIntervals,
-    likelihoodThreshold=0.95,
+    likelihoodThreshold=0.8,
     maximumGapSize=0.01,
     maximumDataLoss=0.1,
     ):
