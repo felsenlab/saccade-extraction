@@ -37,7 +37,7 @@ def _loadPoseEstimates(
     )
 
     pose = dict()
-    for pt in ('eye_nasal', 'eye_ventral', 'eye_temporal', 'eye_dorsal', 'pupil_center'):
+    for pt in ('N', 'L', 'T', 'U', 'P'):
         pose[pt] = np.array(df.select(f'{pt}_x', f'{pt}_y'))
         l = np.array(df.select(f'{pt}_likelihood')).ravel()
         pose[pt][l < likelihoodThreshold, :] = np.array([np.nan, np.nan])
