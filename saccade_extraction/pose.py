@@ -1,4 +1,5 @@
 import yaml
+import code
 import polars
 import numpy as np
 from scipy.signal import find_peaks
@@ -37,16 +38,24 @@ def _loadPoseEstimates(
     )
 
     pose = dict()
-    for pt in ('N', 'L', 'T', 'U', 'P'):
-        pose[pt] = np.array(df.select(f'{pt}_x', f'{pt}_y'))
-        l = np.array(df.select(f'{pt}_likelihood')).ravel()
-        pose[pt][l < likelihoodThreshold, :] = np.array([np.nan, np.nan])
+    columnPrefixes = ('N', 'U', 'T', 'L', 'P')
+    fieldNames = ('eye_nasal', 'eye_ventral', 'eye_temporal', 'eye_dorsal', 'pupil_center')
+    for prefix, field in zip(columnPrefixes, fieldNames):
+    #for pt in ('N', 'U', 'T', 'L', 'P'):
+    #for pt in ('eye_nasal', 'eye_ventral', 'eye_temporal', 'eye_dorsal', 'pupil_center'):
+        #pose[pt] = np.array(df.select(f'{pt}_x', f'{pt}_y'))
+        pose[field] = np.array(df.select(f'{prefix}_x', f'{prefix}_y'))
+        l = np.array(df.select(f'{prefix}_likelihood')).ravel()
+        pose[field][l < likelihoodThreshold, :] = np.array([np.nan, np.nan])
 
     #
     loss = np.isnan(pose['pupil_center']).all(1).sum() / pose['pupil_center'].shape[0]
+    #loss = np.isnan(pose['P']).all(1).sum() / pose['P'].shape[0]
+    #code.interact(local=dict(globals(), **locals()))
     if loss > maximumDataLoss:
-        raise Exception(f'Data loss due to uncertainty in pose estimation ({loss * 100:.1f}%) exceeds threshold of {maximumDataLoss * 100:.1f}')
-
+        #raise Exception(f'Data loss due to uncertainty in pose estimation ({loss * 100:.1f}%) exceeds threshold of {maximumDataLoss * 100:.1f}')
+        # Adjusted to a user warning. We want folks to go through their data if this trips.
+        print(f'Data loss due to uncertainty in pose estimation ({loss * 100:.1f}%)')
     return pose
 
 def _computeProjections(
@@ -149,6 +158,8 @@ def _identifyDroppedFrames(
 
     return corrected, frameTimestamps
 
+
+### TODO: why are projections putting nans in where the csv has good, high confidence data?
 def _processProjections(
     projections,
     interframeIntervals,
@@ -162,29 +173,38 @@ def _processProjections(
     ifi = np.loadtxt(interframeIntervals)[1:]
     fps = 1 / (np.median(ifi) / 1000000000)
     interpolated = np.copy(projections)
+    ## NOTE: interpolation is performed on a column-wise basis, so we collect all indices to be interpolated before interpolating the whole column
     for j in range(projections.shape[1]):
         indices = list()
         startIndices = np.where(np.diff(np.isnan(projections[:, j])))[0][::2] + 1
+
         for startIndex in startIndices:
             stopIndex = None
             for i in range(startIndex, projections.shape[0]):
                 if np.isnan(projections[i, j]).item() == True:
                     continue
-                stopIndex = j
+                stopIndex = i #changed from j to i on 2025-07-11: j is correctly the column index, but we want to find the stop index in the row
                 break
             if stopIndex is None:
+                print('BIG RED FLAG: No stop index found')
                 continue
+        
             dt = (stopIndex - startIndex) / fps
             if dt < maximumGapSize:
                 for i in range(startIndex, stopIndex + 1, 1):
                     indices.append(i)
         if len(indices) == 0:
             continue
-        interpolated = np.interp(
-            np.arange(projections.shape[0]),
-            indices,
-            projections[:, j]
+ 
+        #interpolated np.interp( --> this was overwriting interpolated array
+        interpices = np.interp( ## args are x, xp, and fp. Swapped x and xp to match the docs on 2025-07-11. x is target indices to interp, xp and fp are real data to interp from
+        indices,
+        np.arange(projections.shape[0]),
+        projections[:, j]
         )
+
+        #bug fix 3 -- interp only returns interperated values, so we put them back column wise
+        interpolated[indices, j] = interpices
 
     # Smooth signal
     sigma = round(fps * smoothingWindowSize, 2)
@@ -208,18 +228,20 @@ def loadEyePosition(
         likelihoodThreshold,
         maximumDataLoss
     )
+   
     projections = _computeProjections(pose)
     corrected, frameTimestamps = _identifyDroppedFrames(
         projections,
         interframeIntervals
     )
+ 
     processed = _processProjections(
         corrected,
         interframeIntervals,
         maximumGapSize,
         smoothingWindowSize
     )
-
+    
     return processed, frameTimestamps
 
 def extractPutativeSaccades(
@@ -248,6 +270,7 @@ def extractPutativeSaccades(
     horizontalEyePosition = eyePosition[:, 0]
     verticalEyePosition = eyePosition[:, 1]
     horizontalEyeVelocity = np.diff(horizontalEyePosition)
+
 
     # Detect peaks
     fps = 1 / (np.median(np.loadtxt(interframeIntervals)) / 1000000000)
@@ -296,7 +319,7 @@ def extractPutativeSaccades(
         evaluationTimestamps.append(tEval)
         evaluationIndices.append(iEval)
 
-    #
+    #code.interact(local=dict(globals(), **locals()))
     evaluationIndices = np.around(np.array(evaluationIndices), 3)
     evaluationTimestamps = np.around(np.array(evaluationTimestamps), 3)
     saccadeWaveforms = np.around(np.array(saccadeWaveforms), 3)

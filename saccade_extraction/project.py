@@ -1,3 +1,4 @@
+import code
 import yaml
 import shutil
 import numpy as np
@@ -59,6 +60,10 @@ def collectFileSets(
     """
     Explore subdirectories under root looking for folders that contain pose
     estimates and interframe intervals
+    Modified from the original code to only grab the most recently created
+    pose estimates and interframe intervals for left and right cameras.
+    This is useful for projects that have been run multiple times, e.g. to
+    compare different runs or configurations.
     """
 
     if type(homeFolder) != pl.Path:
@@ -80,6 +85,7 @@ def collectFileSets(
             pass
 
     return fileSets
+
 
 def addNewSessions(
     configFile,
@@ -194,6 +200,7 @@ def extractRealSaccades(
     # Figure out which training dataset to use
     with open(configFile, 'r') as stream:
         configData = yaml.safe_load(stream)
+
     folders, timestamps = list(), list()
     for folder in pl.Path(configData['projectDirectory']).joinpath('models').iterdir():
         parts = folder.name.split('_')
@@ -227,11 +234,15 @@ def extractRealSaccades(
         X = np.diff(X, axis=1) # Compute velocity
         X = X / np.abs(X).max(axis=1).reshape(-1, 1) # Normalize to peak velocity
         saccadeLabelsCoded = clf.predict(X).reshape(-1, 1)
-        saccadeIndices = np.where(np.vstack([
+        saccadeIndices = np.where(np.vstack([ ## this is an odd expression, because it seems that it should always return true and therefore return all indices. 
             saccadeLabelsCoded[:, 0] == -1,
             saccadeLabelsCoded[:, 0] ==  1,
             saccadeLabelsCoded[:, 0] ==  0,
         ]).any(0))[0]
+
+        #print(f'Unqiue labels: {np.unique(saccadeLabelsCoded)}')
+        #print(f'len labels: {saccadeLabelsCoded.shape}')
+        #print(f'len indices: {saccadeIndices.shape}')
 
         nSaccadesReal = np.sum(np.logical_or(saccadeLabelsCoded[:, 0] == -1, saccadeLabelsCoded[:, 0] == 1))
         nSaccadesTotal = putativeSaccadeWaveforms.shape[0]
